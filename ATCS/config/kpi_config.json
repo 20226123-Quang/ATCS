@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "title": "ATCS KPI Standard Configuration",
+    "standard_reference": "TCCS 24:2018/TCDBVN + HCM",
+    "version": "1.0.0"
+  },
+  "simulation": {
+    "default_step_length_seconds": 1,
+    "max_episode_seconds": 3600,
+    "min_green_seconds": 10,
+    "max_green_seconds": 60,
+    "yellow_fallback_seconds": 3,
+    "use_gui": false
+  },
+  "kpi_formulas": {
+    "average_control_delay": "d = d1 * PF + d2 + d3",
+    "uniform_delay_d1": "d1 = 0.5 * C * (1 - g/C)^2 / (1 - min(1, v/c) * g/C)",
+    "incremental_delay_d2": "d2 = k * max(0, v/c - 1)^p * C + saturation_penalty(v/c)",
+    "initial_queue_delay_d3": "d3 = Q_initial / arrival_rate",
+    "degree_of_saturation": "v/c = V / C_cap",
+    "capacity": "C_cap = s * (g/C) * N",
+    "average_queue_length": "L = Q_avg * S_L",
+    "queue_accumulation": "Q(t) = max(0, Q(t-1) + V_in(t) - V_out(t))",
+    "average_queue_vehicles": "Q_avg = sum_t(Q(t)) / T",
+    "spillback_safety": "L < 0.8 * L_link"
+  },
+  "constants": {
+    "saturation_flow_pcu_per_hour_per_lane": 1900.0,
+    "average_vehicle_space_meter": 6.5,
+    "green_wave_pf_default": 1.0,
+    "incremental_delay_k": 0.5,
+    "incremental_delay_power": 2.0,
+    "epsilon": 1e-06,
+    "max_control_delay_seconds": 300.0,
+    "v_c_penalty_threshold": 0.9,
+    "v_c_penalty_weight": 12.0,
+    "default_pcu": 1.0,
+    "pcu_mapping": {
+      "passenger": 1.0,
+      "car": 1.0,
+      "truck": 2.0,
+      "bus": 2.5,
+      "motorcycle": 0.5,
+      "bike": 0.2,
+      "bicycle": 0.2
+    }
+  },
+  "los_table": [
+    {
+      "los": "A",
+      "delay_max_sec_per_veh": 10.0,
+      "v_over_c_max": 0.6
+    },
+    {
+      "los": "B",
+      "delay_min_sec_per_veh": 10.0,
+      "delay_max_sec_per_veh": 20.0,
+      "v_over_c_max": 0.7
+    },
+    {
+      "los": "C",
+      "delay_min_sec_per_veh": 20.0,
+      "delay_max_sec_per_veh": 35.0,
+      "v_over_c_max": 0.8
+    },
+    {
+      "los": "D",
+      "delay_min_sec_per_veh": 35.0,
+      "delay_max_sec_per_veh": 55.0,
+      "v_over_c_max": 0.9
+    },
+    {
+      "los": "E",
+      "delay_min_sec_per_veh": 55.0,
+      "delay_max_sec_per_veh": 80.0,
+      "v_over_c_approx": 1.0
+    },
+    {
+      "los": "F",
+      "delay_min_sec_per_veh": 80.0,
+      "v_over_c_min": 1.0
+    }
+  ],
+  "reward_design": {
+    "shape": "[n_intersections, n_lanes, 2]",
+    "components": [
+      "average_control_delay_sec_per_vehicle",
+      "average_queue_length_meter"
+    ],
+    "note": "Lower is better. Apply optimization externally or convert to negative scalar in trainer."
+  }
+}
