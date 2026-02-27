@@ -31,7 +31,7 @@
     "incremental_delay_k": 0.5,
     "incremental_delay_power": 2.0,
     "epsilon": 1e-06,
-    "max_control_delay_seconds": 300.0,
+    "max_control_delay_seconds": 150.0,
     "v_c_penalty_threshold": 0.9,
     "v_c_penalty_weight": 12.0,
     "default_pcu": 1.0,

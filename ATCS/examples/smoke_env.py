@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from atcs.environment import TrafficEnvironment
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sumocfg", required=True, help="Path to SUMO .sumocfg file")
-    parser.add_argument("--steps", type=int, default=5, help="Number of decision steps")
+    default_cfg = str(Path(__file__).resolve().parents[2] / "SimulationData" / "SampleData" / "Crowded" / "config.sumocfg")
+    parser.add_argument("--sumocfg", default=default_cfg, help="Path to SUMO .sumocfg file")
+    parser.add_argument("--steps", type=int, default=1000, help="Number of decision steps")
     parser.add_argument("--gui", action="store_true", help="Run with SUMO GUI")
     args = parser.parse_args()
 
