@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import sys
+
+# Thêm thư mục gốc ATCS vào sys.path để Python tìm thấy module 'atcs'
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from atcs.environment import TrafficEnvironment
 
@@ -26,9 +30,12 @@ def main() -> None:
 
     for step_idx in range(args.steps):
         required = info["intersection_require_action"]
+        controllable = info.get("controllable_intersections", {})
+        
         action = {tls_id: 5.0 for tls_id in required}
         obs, reward, done, info = env.step(action)
-        print(f"step {step_idx + 1}: done={done}, required={required}, delta_t={info['delta_t']}")
+        
+        print(f"step {step_idx + 1}: done={done}, controllable_lanes={controllable} (require_action={required}), delta_t={info['delta_t']}")
         if done:
             break
 
