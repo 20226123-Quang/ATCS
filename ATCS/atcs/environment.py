@@ -270,7 +270,10 @@ class TrafficEnvironment:
             runtime.decision_pending = False
             if extension_seconds > 0:
                 runtime.remaining_phase_seconds += extension_seconds
-                runtime.cycle_length_seconds += extension_seconds
+                # NOTE: cycle_length_seconds is NOT modified here because
+                # the cycle is fixed by config (cycle_length_seconds in kpi_config.json).
+                # The RL agent only extends the current green phase,
+                # but the total cycle boundary stays at the configured value.
 
             if runtime.remaining_phase_seconds <= 0:
                 self._advance_to_next_phase(tls_id)
