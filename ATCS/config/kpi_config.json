@@ -88,5 +88,75 @@
       "average_queue_length_meter"
     ],
     "note": "Lower is better. Apply optimization externally or convert to negative scalar in trainer."
+  },
+  "fixed_time_plans": {
+    "J1": [
+      [
+        27.5,
+        "grrgGrgrrgGr"
+      ],
+      [
+        3,
+        "grrgyrgrrgyr"
+      ],
+      [
+        27.5,
+        "grrgrGgrrgrG"
+      ],
+      [
+        3,
+        "grrgrygrrgry"
+      ],
+      [
+        27.5,
+        "gGrgrrgGrgrr"
+      ],
+      [
+        3,
+        "gyrgrrgyrgrr"
+      ],
+      [
+        27.5,
+        "grGgrrgrGgrr"
+      ],
+      [
+        3,
+        "grygrrgrygrr"
+      ]
+    ],
+    "J3": [
+      [
+        27.5,
+        "grrgGrgrrgGr"
+      ],
+      [
+        3,
+        "grrgyrgrrgyr"
+      ],
+      [
+        27.5,
+        "grrgrGgrrgrG"
+      ],
+      [
+        3,
+        "grrgrygrrgry"
+      ],
+      [
+        27.5,
+        "gGrgrrgGrgrr"
+      ],
+      [
+        3,
+        "gyrgrrgyrgrr"
+      ],
+      [
+        27.5,
+        "grGgrrgrGgrr"
+      ],
+      [
+        3,
+        "grygrrgrygrr"
+      ]
+    ]
   }
 }

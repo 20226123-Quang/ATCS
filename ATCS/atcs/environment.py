@@ -416,6 +416,13 @@ class TrafficEnvironment:
 
         # Determine which lanes are green for the intersections that require action
         controllable_lanes = {}
+        remaining_cycle_info = {}
+        
+        for tls_id in self.tls_ids:
+            runtime = self.tls_runtime[tls_id]
+            remaining = max(0, runtime.cycle_length_seconds - runtime.cycle_elapsed_seconds)
+            remaining_cycle_info[tls_id] = remaining
+
         for tls_id in self.required_action:
             runtime = self.tls_runtime[tls_id]
             program = self.tls_programs[tls_id]
@@ -442,6 +449,7 @@ class TrafficEnvironment:
                 for tls_id in self.required_action
             },
             "controllable_intersections": controllable_lanes,
+            "remaining_cycle": remaining_cycle_info,
         }
 
     def reset(self) -> Tuple[np.ndarray, np.ndarray, bool, Dict[str, object]]:

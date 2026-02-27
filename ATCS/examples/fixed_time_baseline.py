@@ -12,110 +12,92 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from atcs.environment import TrafficEnvironment
-from atcs.sumo_parser import TLSProgram, PhaseDefinition
+import argparse
+from pathlib import Path
+import time
+import json
+import sys
 
+# Thêm thư mục gốc ATCS vào sys.path để Python tìm thấy module 'atcs'
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-FIXED_TIME_PLANS = {
-    "J1": [
-        (27.5, "grrgGrgrrgGr"),   # North-South through (green)
-        (3,    "grrgyrgrrgyr"),   # Yellow after NS through
-        (27.5, "grrgrGgrrgrG"),   # North-South left turn (green)
-        (3,    "grrgrygrrgry"),   # Yellow after NS left
-        (27.5, "gGrgrrgGrgrr"),   # East-West through (green)
-        (3,    "gyrgrrgyrgrr"),   # Yellow after EW through
-        (27.5, "grGgrrgrGgrr"),   # East-West left turn (green)
-        (3,    "grygrrgrygrr"),   # Yellow after EW left
-    ],
-    "J3": [
-        (27.5, "grrgGrgrrgGr"),
-        (3,    "grrgyrgrrgyr"),
-        (27.5, "grrgrGgrrgrG"),
-        (3,    "grrgrygrrgry"),
-        (27.5, "gGrgrrgGrgrr"),
-        (3,    "gyrgrrgyrgrr"),
-        (27.5, "grGgrrgrGgrr"),
-        (3,    "grygrrgrygrr"),
-    ]
-}
-
-
-def inject_fixed_time_plans(env: TrafficEnvironment, plans_dict: dict):
-    """
-    Override the environment's parsed TLS programs with the hardcoded, 
-    conflict-free FIXED_TIME_PLANS.
-    """
-    for tls_id, plan in plans_dict.items():
-        if tls_id not in env.tls_programs:
-            continue
-            
-        phases = []
-        for idx, (duration, state) in enumerate(plan):
-            phase_type = 'green' if 'g' in state.lower() else ('yellow' if 'y' in state.lower() else 'red')
-            phases.append(
-                PhaseDefinition(
-                    index=idx,
-                    duration_seconds=int(duration),
-                    state=state,
-                    phase_type=phase_type
-                )
-            )
-            
-        first_green_index = next((p.index for p in phases if p.phase_type == "green"), 0)
-        base_cycle_seconds = sum(p.duration_seconds for p in phases)
-        
-        env.tls_programs[tls_id] = TLSProgram(
-            tls_id=tls_id,
-            phases=tuple(phases),
-            base_cycle_seconds=base_cycle_seconds,
-            first_green_index=first_green_index
-        )
-    print("Injected conflict-free FIXED_TIME_PLANS into the environment.")
+import traci
+from atcs.environment import TrafficEnvironment
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Evaluate ATCS Environment with Fixed Time Control")
+    parser = argparse.ArgumentParser(description="Evaluate ATCS Environment with explicit Fixed Time actions")
     default_cfg = str(Path(__file__).resolve().parents[2] / "SimulationData" / "SampleData" / "Crowded" / "config.sumocfg")
     parser.add_argument("--sumocfg", default=default_cfg, help="Path to SUMO .sumocfg file")
     parser.add_argument("--gui", action="store_true", help="Run with SUMO GUI")
-    parser.add_argument("--metrics_out", default="fixed_time_metrics.json", help="Path to save output metrics")
     args = parser.parse_args()
 
     print(f"Loading environment from: {args.sumocfg}")
+    # We still use TrafficEnvironment to initialize traci, KPI engines, etc.
     env = TrafficEnvironment(sumocfg_path=args.sumocfg, use_gui=args.gui)
     
-    # Inject the conflict-free plans BEFORE resetting the environment
-    inject_fixed_time_plans(env, FIXED_TIME_PLANS)
-    
+    plans = env.kpi_config.fixed_time_plans
+    if not plans:
+        print("Error: No fixed_time_plans found in KPI config.")
+        return
+
+    # Khởi tạo state mô phỏng
     obs, reward, done, info = env.reset()
-    print("\nEnvironment reset successful. Starting Fixed-Time baseline...")
+    print("\nEnvironment reset successful. Starting Custom Fixed-Time baseline...")
     
+    # Custom Tracker cho mỗi ngã tư
+    tls_trackers = {}
+    for tls_id in env.tls_ids:
+        if tls_id in plans:
+            tls_trackers[tls_id] = {
+                "phases": plans[tls_id],
+                "current_idx": 0,
+                "elapsed": 0,
+                "duration": plans[tls_id][0][0],  # Số giây hardcode (VD: 27.5 hoặc 30)
+                "state": plans[tls_id][0][1]      # Chuỗi pha (VD: grrgGrgrrgGr)
+            }
+            traci.trafficlight.setRedYellowGreenState(tls_id, tls_trackers[tls_id]["state"])
+            print(f"[{tls_id}] Init Phase 0: {tls_trackers[tls_id]['duration']}s -> {tls_trackers[tls_id]['state']}")
+
     step_count = 0
     start_time = time.time()
+    
+    # Vòng lặp mô phỏng tùy chỉnh
+    while True:
+        try:
+            # Check done condition (hết xe hoăc hết thời gian)
+            if env.simulation_time >= env.max_episode_seconds or traci.simulation.getMinExpectedNumber() <= 0:
+                break
+                
+            traci.simulationStep()
+            env.simulation_time += env.step_length_seconds
+            
+            # Action: Mỗi ngã tư tự kiểm tra xem đã hết thời gian của phase hiện tại chưa
+            for tls_id, tracker in tls_trackers.items():
+                tracker["elapsed"] += env.step_length_seconds
+                
+                # Nếu đã hết duration của pha này, chuyển sang pha tiếp theo trong mảng
+                if tracker["elapsed"] >= tracker["duration"]:
+                    tracker["current_idx"] = (tracker["current_idx"] + 1) % len(tracker["phases"])
+                    tracker["duration"] = tracker["phases"][tracker["current_idx"]][0]
+                    tracker["state"] = tracker["phases"][tracker["current_idx"]][1]
+                    tracker["elapsed"] = 0
+                    
+                    traci.trafficlight.setRedYellowGreenState(tls_id, tracker["state"])
+                    print(f"[{env.simulation_time}s][{tls_id}] Action - Chuyển sang phase {tracker['current_idx']}: {tracker['duration']}s -> {tracker['state']}")
 
-    while not done:
-        # In Fixed-Time mode, the environment's `TrafficEnvironment` class internally runs 
-        # the exact phases we just injected.
-        # When `info['intersection_require_action']` asks for an action, we return 0.0 seconds
-        # extension so that it moves *exactly* to the next planned phase shown in `FIXED_TIME_PLANS`.
-        
-        required_intersections = info.get("intersection_require_action", [])
-        action = {tls_id: 0.0 for tls_id in required_intersections}
-        
-        # Display the controllable green lanes info
-        controllable_lanes = info.get("controllable_intersections", {})
-        if controllable_lanes:
-            print(f"[{info['delta_t']}s simulated] Controllable Lights: {controllable_lanes}")
-        
-        obs, reward, done, info = env.step(action)
-        step_count += 1
+            step_count += 1
+            
+        except traci.exceptions.FatalTraCIError:
+            print("SUMO Connection closed.")
+            break
         
     execution_time = time.time() - start_time
     env.close()
 
     print(f"\n--- Simulation Complete ---")
-    print(f"Total decision steps: {step_count}")
+    print(f"Total simulation steps: {step_count}")
     print(f"Execution time: {execution_time:.2f} seconds")
-    print(f"Simulation finished. To view formal metrics, integrate the KPI logs.")
 
 if __name__ == "__main__":
     main()
