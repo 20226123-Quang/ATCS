@@ -42,6 +42,7 @@ class TrafficEnvironment:
         max_episode_seconds: Optional[int] = None,
         sumo_binary: Optional[str] = None,
     ) -> None:
+        self.connected = False
         self.sumocfg_path = Path(sumocfg_path).resolve()
         self.kpi_config: KPIConfig = load_kpi_config(kpi_config_path)
         self.network: ParsedSUMONetwork = parse_sumo_network(
@@ -66,7 +67,6 @@ class TrafficEnvironment:
 
         self.sumo_binary = sumo_binary or self._resolve_sumo_binary(self.use_gui)
         self.connection_label = f"ATCS_{uuid.uuid4().hex[:8]}"
-        self.connected = False
 
         self.kpi_engine = KPIEngine(self.kpi_config.constants)
         self.tls_runtime: Dict[str, TLSRuntimeState] = {}
@@ -345,6 +345,60 @@ class TrafficEnvironment:
 
         return obs, reward
 
+    def _compute_effective_extension_range(self, tls_id: str) -> Tuple[float, float]:
+        """
+        Tính khoảng extension [min_ext, max_ext] hợp lệ, theo công thức:
+
+            x = base_current + ext  (tổng thời gian xanh pha hiện tại)
+
+            max_x = min(max_green, T_remain - remain_phase × (min_green + yellow_time))
+            min_x = max(min_green, T_remain - remain_phase × (max_green + yellow_time))
+
+            ext ∈ [min_x - base, max_x - base]  ∩  [0, max_extension]
+
+        remain_phase = số pha xanh còn lại SAU pha hiện tại.
+        yellow_time  = thời gian yellow trung bình giữa các pha xanh.
+        """
+        runtime = self.tls_runtime[tls_id]
+        program = self.tls_programs[tls_id]
+
+        # Thời gian còn lại trong chu kỳ
+        t_remain = float(runtime.cycle_length_seconds - runtime.cycle_elapsed_seconds)
+
+        # Base duration của pha hiện tại (chưa chạy)
+        base_current = float(runtime.remaining_phase_seconds)
+
+        # Thống kê các pha SAU pha hiện tại
+        phases_after = program.phases[runtime.current_phase_index + 1:]
+        remain_phase = sum(1 for p in phases_after if p.phase_type == "green")
+        total_yellow_after = sum(
+            p.duration_seconds for p in phases_after if p.phase_type != "green"
+        )
+
+        # Yellow trung bình mỗi pha xanh còn lại (như công thức cũ)
+        yellow_time = total_yellow_after / remain_phase if remain_phase > 0 else 0.0
+
+        # Tổng green cho pha hiện tại phải thỏa:
+        max_x = min(
+            float(self.max_green_seconds),
+            t_remain - remain_phase * (self.min_green_seconds + yellow_time),
+        )
+        min_x = max(
+            float(self.min_green_seconds),
+            t_remain - remain_phase * (self.max_green_seconds + yellow_time),
+        )
+
+        # Convert sang extension (ext = x - base)
+        max_ext = min(float(self.max_extension_seconds), max_x - base_current)
+        min_ext = max(0.0, min_x - base_current)
+
+        # Đảm bảo khoảng hợp lệ
+        min_ext = max(0.0, min_ext)
+        max_ext = max(min_ext, max_ext)
+
+        return min_ext, max_ext
+
+
     def _build_info(self, delta_t: int) -> Dict[str, object]:
         cycle_length_map = {
             tls_id: self.tls_runtime[tls_id].cycle_length_seconds for tls_id in self.tls_ids
@@ -359,6 +413,10 @@ class TrafficEnvironment:
             "cycle_length": cycle_length_value,
             "delta_t": int(delta_t),
             "intersection_require_action": sorted(self.required_action),
+            "effective_action_range": {
+                tls_id: self._compute_effective_extension_range(tls_id)
+                for tls_id in self.required_action
+            },
         }
 
     def reset(self) -> Tuple[np.ndarray, np.ndarray, bool, Dict[str, object]]:

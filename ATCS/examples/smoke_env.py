@@ -7,7 +7,6 @@ from pathlib import Path
 
 from atcs.environment import TrafficEnvironment
 
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     default_cfg = str(Path(__file__).resolve().parents[2] / "SimulationData" / "SampleData" / "Crowded" / "config.sumocfg")
