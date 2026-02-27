@@ -15,6 +15,7 @@ class SimulationSettings:
     min_green_seconds: int
     max_green_seconds: int
     yellow_fallback_seconds: int
+    cycle_length_seconds: int
     use_gui: bool
 
 
@@ -64,6 +65,7 @@ def load_kpi_config(config_path: Optional[str] = None) -> KPIConfig:
         min_green_seconds=int(sim_raw.get("min_green_seconds", 10)),
         max_green_seconds=int(sim_raw.get("max_green_seconds", 60)),
         yellow_fallback_seconds=int(sim_raw.get("yellow_fallback_seconds", 3)),
+        cycle_length_seconds=int(sim_raw.get("cycle_length_seconds", 132)),
         use_gui=bool(sim_raw.get("use_gui", False)),
     )
 
