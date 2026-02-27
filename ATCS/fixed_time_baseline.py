@@ -7,9 +7,6 @@ from pathlib import Path
 import time
 import sys
 
-# Thêm thư mục gốc ATCS vào sys.path để Python tìm thấy module 'atcs'
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-
 from atcs.environment import TrafficEnvironment
 from atcs.sumo_parser import TLSProgram, PhaseDefinition
 
@@ -72,7 +69,7 @@ def inject_fixed_time_plans(env: TrafficEnvironment):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate ATCS with explicit Fixed-Time green actions")
-    default_cfg = str(Path(__file__).resolve().parents[2] / "SimulationData" / "SampleData" / "Crowded" / "config.sumocfg")
+    default_cfg = str(Path(__file__).resolve().parents[1] / "SimulationData" / "SampleData" / "Crowded" / "config.sumocfg")
     parser.add_argument("--sumocfg", default=default_cfg, help="Path to SUMO .sumocfg file")
     parser.add_argument("--gui", action="store_true", help="Run with SUMO GUI")
     args = parser.parse_args()

@@ -362,6 +362,9 @@ class TrafficEnvironment:
         runtime = self.tls_runtime[tls_id]
         program = self.tls_programs[tls_id]
 
+        print(f"runtime: {runtime}")
+        print(f"program: {program}")
+
         # Thời gian còn lại trong chu kỳ
         t_remain = float(runtime.cycle_length_seconds - runtime.cycle_elapsed_seconds)
 
@@ -380,7 +383,7 @@ class TrafficEnvironment:
 
         # Tổng green cho pha hiện tại phải thỏa:
 
-        print(f"t_remain: {t_remain}, remain_phase: {remain_phase}, yellow_time: {yellow_time}, min_green: {self.min_green_seconds}, max_green: {self.max_green_seconds}, max_extension: {self.max_extension_seconds}")
+        # print(f"t_remain: {t_remain}, remain_phase: {remain_phase}, yellow_time: {yellow_time}, min_green: {self.min_green_seconds}, max_green: {self.max_green_seconds}, max_extension: {self.max_extension_seconds}")
 
         max_x = min(
             float(self.max_green_seconds),
@@ -391,9 +394,9 @@ class TrafficEnvironment:
             t_remain - remain_phase * (self.max_green_seconds + yellow_time),
         )
 
-        print("max_x", max_x)
-        print("min_x", min_x)
-        print("base_current", base_current)
+        # print("max_x", max_x)
+        # print("min_x", min_x)
+        # print("base_current", base_current)
         
         # Convert sang extension (ext = x - base)
         max_ext = min(float(self.max_extension_seconds), max_x - base_current)
