@@ -120,16 +120,20 @@ def main() -> None:
         # Xây dựng action: nếu chưa cấp xanh → cấp FIXED_GREEN_TIME, nếu cấp rồi → trả 0
         action = {}
         for tls_id in required_intersections:
+            cycle_len = info.get("cycle_length", {})
+            rem = remaining_cycle.get(tls_id, "?")
+            clen = cycle_len.get(tls_id, "?") if isinstance(cycle_len, dict) else cycle_len
+            
             if tls_id not in phase_extended:
                 # Lần đầu hỏi cho pha xanh này → cấp đủ số giây xanh
                 action[tls_id] = FIXED_GREEN_TIME
                 phase_extended.add(tls_id)
-                print(f"[{env.simulation_time}s][{tls_id}] Action = {FIXED_GREEN_TIME}s (GREEN), Remaining Cycle: {remaining_cycle.get(tls_id, '?')}")
+                print(f"[{env.simulation_time}s][{tls_id}] GREEN {FIXED_GREEN_TIME}s | remaining={rem}s / cycle={clen}s")
             else:
                 # Lần thứ 2 hỏi → hết xanh, chuyển sang pha vàng
                 action[tls_id] = 0
                 phase_extended.discard(tls_id)
-                print(f"[{env.simulation_time}s][{tls_id}] Action = 0 (chuyển YELLOW)")
+                print(f"[{env.simulation_time}s][{tls_id}] YELLOW  0s | remaining={rem}s / cycle={clen}s")
         
         obs, reward, done, info = env.step(action)
         step_count += 1
