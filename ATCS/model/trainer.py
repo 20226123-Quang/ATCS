@@ -141,7 +141,7 @@ class ACACTrainer:
 
 				# Scale sang kự năng có hiệu lực [min_ext, max_ext]
 				eff_range = info.get("effective_action_range", {}).get(name, (info["min_green"], info["max_green"]))
-				print(f"eff_range: {eff_range}")
+				# print(f"eff_range: {eff_range}")
 				env_action = self._scale_action(actor_val, eff_range[0], eff_range[1])
 				action_dict[name] = env_action
 

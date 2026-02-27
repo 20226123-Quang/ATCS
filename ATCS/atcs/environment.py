@@ -379,6 +379,9 @@ class TrafficEnvironment:
         yellow_time = total_yellow_after / remain_phase if remain_phase > 0 else 0.0
 
         # Tổng green cho pha hiện tại phải thỏa:
+
+        print(f"t_remain: {t_remain}, remain_phase: {remain_phase}, yellow_time: {yellow_time}, min_green: {self.min_green_seconds}, max_green: {self.max_green_seconds}, max_extension: {self.max_extension_seconds}")
+
         max_x = min(
             float(self.max_green_seconds),
             t_remain - remain_phase * (self.min_green_seconds + yellow_time),
@@ -388,6 +391,10 @@ class TrafficEnvironment:
             t_remain - remain_phase * (self.max_green_seconds + yellow_time),
         )
 
+        print("max_x", max_x)
+        print("min_x", min_x)
+        print("base_current", base_current)
+        
         # Convert sang extension (ext = x - base)
         max_ext = min(float(self.max_extension_seconds), max_x - base_current)
         min_ext = max(0.0, min_x - base_current)
