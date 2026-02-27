@@ -10,6 +10,7 @@
     "min_green_seconds": 10,
     "max_green_seconds": 60,
     "yellow_fallback_seconds": 3,
+    "cycle_length_seconds": 132,
     "use_gui": false
   },
   "kpi_formulas": {

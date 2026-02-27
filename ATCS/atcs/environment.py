@@ -56,6 +56,7 @@ class TrafficEnvironment:
         self.step_length_seconds = max(int(sim_cfg.default_step_length_seconds), 1)
         self.min_green_seconds = int(sim_cfg.min_green_seconds)
         self.max_green_seconds = int(sim_cfg.max_green_seconds)
+        self.cycle_length_seconds = int(sim_cfg.cycle_length_seconds)
         self.max_extension_seconds = max(self.max_green_seconds - self.min_green_seconds, 0)
         self.use_gui = sim_cfg.use_gui if use_gui is None else bool(use_gui)
         self.max_episode_seconds = (
@@ -158,7 +159,7 @@ class TrafficEnvironment:
                 current_phase_index=phase_index,
                 remaining_phase_seconds=max(int(phase.duration_seconds), 0),
                 cycle_elapsed_seconds=0,
-                cycle_length_seconds=program.base_cycle_seconds,
+                cycle_length_seconds=self.cycle_length_seconds,
                 decision_pending=True,
             )
             traci.trafficlight.setRedYellowGreenState(tls_id, phase.state)
@@ -236,7 +237,9 @@ class TrafficEnvironment:
 
             if wrapped_cycle:
                 runtime.cycle_elapsed_seconds = 0
-                runtime.cycle_length_seconds = program.base_cycle_seconds
+                # Always reset to the canonical fixed cycle length from config,
+                # ignoring any extension added by RL agent during this cycle.
+                runtime.cycle_length_seconds = self.cycle_length_seconds
                 self._reset_cycle_lane_metrics(tls_id)
 
             phase = program.phases[next_index]
