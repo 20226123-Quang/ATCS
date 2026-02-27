@@ -15,35 +15,16 @@ from atcs.environment import TrafficEnvironment
 from atcs.sumo_parser import TLSProgram, PhaseDefinition
 
 
-FIXED_TIME_PLANS = {
-    "J1": [
-        (27.5, "grrgGrgrrgGr"),   # North-South through (green)
-        (3,    "grrgyrgrrgyr"),   # Yellow after NS through
-        (27.5, "grrgrGgrrgrG"),   # North-South left turn (green)
-        (3,    "grrgrygrrgry"),   # Yellow after NS left
-        (27.5, "gGrgrrgGrgrr"),   # East-West through (green)
-        (3,    "gyrgrrgyrgrr"),   # Yellow after EW through
-        (27.5, "grGgrrgrGgrr"),   # East-West left turn (green)
-        (3,    "grygrrgrygrr"),   # Yellow after EW left
-    ],
-    "J3": [
-        (27.5, "grrgGrgrrgGr"),
-        (3,    "grrgyrgrrgyr"),
-        (27.5, "grrgrGgrrgrG"),
-        (3,    "grrgrygrrgry"),
-        (27.5, "gGrgrrgGrgrr"),
-        (3,    "gyrgrrgyrgrr"),
-        (27.5, "grGgrrgrGgrr"),
-        (3,    "grygrrgrygrr"),
-    ]
-}
-
-
-def inject_fixed_time_plans(env: TrafficEnvironment, plans_dict: dict):
+def inject_fixed_time_plans(env: TrafficEnvironment):
     """
-    Override the environment's parsed TLS programs with the hardcoded, 
-    conflict-free FIXED_TIME_PLANS.
+    Override the environment's parsed TLS programs with the conflict-free 
+    plans defined in kpi_config.json -> fixed_time_plans.
     """
+    plans_dict = env.kpi_config.fixed_time_plans
+    if not plans_dict:
+        print("Warning: No 'fixed_time_plans' found in KPI config. Relying on default SUMO net phases.")
+        return
+
     for tls_id, plan in plans_dict.items():
         if tls_id not in env.tls_programs:
             continue
@@ -69,7 +50,7 @@ def inject_fixed_time_plans(env: TrafficEnvironment, plans_dict: dict):
             base_cycle_seconds=base_cycle_seconds,
             first_green_index=first_green_index
         )
-    print("Injected conflict-free FIXED_TIME_PLANS into the environment.")
+    print("Injected conflict-free fixed_time_plans from config into the environment.")
 
 
 def main() -> None:
@@ -84,7 +65,7 @@ def main() -> None:
     env = TrafficEnvironment(sumocfg_path=args.sumocfg, use_gui=args.gui)
     
     # Inject the conflict-free plans BEFORE resetting the environment
-    inject_fixed_time_plans(env, FIXED_TIME_PLANS)
+    inject_fixed_time_plans(env)
     
     obs, reward, done, info = env.reset()
     print("\nEnvironment reset successful. Starting Fixed-Time baseline...")
@@ -93,18 +74,20 @@ def main() -> None:
     start_time = time.time()
 
     while not done:
-        # In Fixed-Time mode, the environment's `TrafficEnvironment` class internally runs 
-        # the exact phases we just injected.
+        # In Fixed-Time mode, the environment's TrafficEnvironment class internally runs 
+        # the exact phases we just injected from the KPI config file.
         # When `info['intersection_require_action']` asks for an action, we return 0.0 seconds
-        # extension so that it moves *exactly* to the next planned phase shown in `FIXED_TIME_PLANS`.
+        # extension so that it moves *exactly* to the next planned phase.
         
         required_intersections = info.get("intersection_require_action", [])
         action = {tls_id: 0.0 for tls_id in required_intersections}
         
         # Display the controllable green lanes info
         controllable_lanes = info.get("controllable_intersections", {})
+        remaining_cycle = info.get("remaining_cycle", {})
+        
         if controllable_lanes:
-            print(f"[{info['delta_t']}s simulated] Controllable Lights: {controllable_lanes}")
+            print(f"[{info['delta_t']}s simulated] Controllable Lights: {controllable_lanes}, Remaining Cycle: {remaining_cycle}")
         
         obs, reward, done, info = env.step(action)
         step_count += 1

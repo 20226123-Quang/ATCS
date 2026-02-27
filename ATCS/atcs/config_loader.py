@@ -41,6 +41,7 @@ class KPIConfig:
     formulas: Dict[str, str]
     los_table: List[Dict[str, Any]]
     reward_design: Dict[str, Any]
+    fixed_time_plans: Dict[str, List[tuple]]
 
 
 def _default_config_path() -> Path:
@@ -95,4 +96,5 @@ def load_kpi_config(config_path: Optional[str] = None) -> KPIConfig:
         formulas={str(k): str(v) for k, v in raw.get("kpi_formulas", {}).items()},
         los_table=list(raw.get("los_table", [])),
         reward_design=dict(raw.get("reward_design", {})),
+        fixed_time_plans=dict(raw.get("fixed_time_plans", {})),
     )
