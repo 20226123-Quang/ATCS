@@ -7,40 +7,69 @@ from pathlib import Path
 import time
 import json
 import sys
-import xml.etree.ElementTree as ET
 
 # Thêm thư mục gốc ATCS vào sys.path để Python tìm thấy module 'atcs'
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from atcs.environment import TrafficEnvironment
-from atcs.sumo_parser import _resolve_net_file
+from atcs.sumo_parser import TLSProgram, PhaseDefinition
 
 
-def get_fixed_time_plans_from_net(sumocfg_path: str):
+FIXED_TIME_PLANS = {
+    "J1": [
+        (27.5, "grrgGrgrrgGr"),   # North-South through (green)
+        (3,    "grrgyrgrrgyr"),   # Yellow after NS through
+        (27.5, "grrgrGgrrgrG"),   # North-South left turn (green)
+        (3,    "grrgrygrrgry"),   # Yellow after NS left
+        (27.5, "gGrgrrgGrgrr"),   # East-West through (green)
+        (3,    "gyrgrrgyrgrr"),   # Yellow after EW through
+        (27.5, "grGgrrgrGgrr"),   # East-West left turn (green)
+        (3,    "grygrrgrygrr"),   # Yellow after EW left
+    ],
+    "J3": [
+        (27.5, "grrgGrgrrgGr"),
+        (3,    "grrgyrgrrgyr"),
+        (27.5, "grrgrGgrrgrG"),
+        (3,    "grrgrygrrgry"),
+        (27.5, "gGrgrrgGrgrr"),
+        (3,    "gyrgrrgyrgrr"),
+        (27.5, "grGgrrgrGgrr"),
+        (3,    "grygrrgrygrr"),
+    ]
+}
+
+
+def inject_fixed_time_plans(env: TrafficEnvironment, plans_dict: dict):
     """
-    Parse SUMO net file to extract fixed-time signal plans for each traffic light.
-    Returns a dict: {tls_id: [(duration, state_string), ...]}
+    Override the environment's parsed TLS programs with the hardcoded, 
+    conflict-free FIXED_TIME_PLANS.
     """
-    try:
-        net_path = _resolve_net_file(Path(sumocfg_path))
-        net_root = ET.parse(net_path).getroot()
-    except Exception as e:
-        print(f"Error loading net file: {e}")
-        return None
-
-    plans = {}
-    for tl in net_root.findall('tlLogic'):
-        tls_id = tl.get('id')
+    for tls_id, plan in plans_dict.items():
+        if tls_id not in env.tls_programs:
+            continue
+            
         phases = []
-        for phase in tl.findall('phase'):
-            duration_raw = phase.get('duration')
-            duration = float(duration_raw) if duration_raw else None
-            state = phase.get('state')
-            if duration is not None and state:
-                phases.append((duration, state))
-        if phases:
-            plans[tls_id] = phases
-    return plans
+        for idx, (duration, state) in enumerate(plan):
+            phase_type = 'green' if 'g' in state.lower() else ('yellow' if 'y' in state.lower() else 'red')
+            phases.append(
+                PhaseDefinition(
+                    index=idx,
+                    duration_seconds=int(duration),
+                    state=state,
+                    phase_type=phase_type
+                )
+            )
+            
+        first_green_index = next((p.index for p in phases if p.phase_type == "green"), 0)
+        base_cycle_seconds = sum(p.duration_seconds for p in phases)
+        
+        env.tls_programs[tls_id] = TLSProgram(
+            tls_id=tls_id,
+            phases=tuple(phases),
+            base_cycle_seconds=base_cycle_seconds,
+            first_green_index=first_green_index
+        )
+    print("Injected conflict-free FIXED_TIME_PLANS into the environment.")
 
 
 def main() -> None:
@@ -52,19 +81,10 @@ def main() -> None:
     args = parser.parse_args()
 
     print(f"Loading environment from: {args.sumocfg}")
-    
-    # Extract fixed-time plans from net file to verify we have them
-    fixed_time_plans = get_fixed_time_plans_from_net(args.sumocfg)
-    if fixed_time_plans:
-        print("Successfully extracted fixed-time plans from network:")
-        for tls, phases in fixed_time_plans.items():
-            print(f"  {tls}: {len(phases)} phases detected.")
-            for d, s in phases:
-                print(f"    - {d}s: {s}")
-    else:
-        print("Warning: Could not extract specific fixed-time plans. Relying purely on SUMO's internal cycle.")
-
     env = TrafficEnvironment(sumocfg_path=args.sumocfg, use_gui=args.gui)
+    
+    # Inject the conflict-free plans BEFORE resetting the environment
+    inject_fixed_time_plans(env, FIXED_TIME_PLANS)
     
     obs, reward, done, info = env.reset()
     print("\nEnvironment reset successful. Starting Fixed-Time baseline...")
@@ -74,15 +94,14 @@ def main() -> None:
 
     while not done:
         # In Fixed-Time mode, the environment's `TrafficEnvironment` class internally runs 
-        # the exact phases parsed from the `.net.xml` file (via `sumo_parser.parse_sumo_network`).
+        # the exact phases we just injected.
         # When `info['intersection_require_action']` asks for an action, we return 0.0 seconds
         # extension so that it moves *exactly* to the next planned phase shown in `FIXED_TIME_PLANS`.
-        # This guarantees safety and explicit phase adherence without conflicts.
         
         required_intersections = info.get("intersection_require_action", [])
         action = {tls_id: 0.0 for tls_id in required_intersections}
         
-        # Display the controllable green lanes info we built earlier
+        # Display the controllable green lanes info
         controllable_lanes = info.get("controllable_intersections", {})
         if controllable_lanes:
             print(f"[{info['delta_t']}s simulated] Controllable Lights: {controllable_lanes}")
