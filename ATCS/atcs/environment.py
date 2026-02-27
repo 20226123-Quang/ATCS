@@ -407,6 +407,23 @@ class TrafficEnvironment:
         if len(cycle_length_map) == 1:
             cycle_length_value = next(iter(cycle_length_map.values()))
 
+        # Determine which lanes are green for the intersections that require action
+        controllable_lanes = {}
+        for tls_id in self.required_action:
+            runtime = self.tls_runtime[tls_id]
+            program = self.tls_programs[tls_id]
+            phase = program.phases[runtime.current_phase_index]
+            
+            if phase.phase_type == "green":
+                green_lanes = set()
+                lane_index_map = self.lane_link_indices.get(tls_id, {})
+                for lane_id, link_indices in lane_index_map.items():
+                    # If any of the links for this lane have a 'G' or 'g' in the state
+                    if any(idx < len(phase.state) and phase.state[idx] in ("G", "g") for idx in link_indices):
+                        green_lanes.add(lane_id)
+                if green_lanes:
+                    controllable_lanes[tls_id] = sorted(list(green_lanes))
+
         return {
             "min_green": self.min_green_seconds,
             "max_green": self.max_green_seconds,
@@ -417,6 +434,7 @@ class TrafficEnvironment:
                 tls_id: self._compute_effective_extension_range(tls_id)
                 for tls_id in self.required_action
             },
+            "controllable_intersections": controllable_lanes,
         }
 
     def reset(self) -> Tuple[np.ndarray, np.ndarray, bool, Dict[str, object]]:
