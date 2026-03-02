@@ -13,7 +13,7 @@ import traci
 
 from .config_loader import KPIConfig, load_kpi_config
 from .kpi_engine import KPIEngine
-from .sumo_parser import ParsedSUMONetwork, TLSProgram, parse_sumo_network
+from .sumo_parser import ParsedSUMONetwork, TLSProgram, parse_sumo_network, PhaseDefinition
 
 
 @dataclass
@@ -82,6 +82,56 @@ class TrafficEnvironment:
         self.vehicle_pcu_cache: Dict[str, float] = {}
         self.simulation_time = 0
         self.done = False
+
+        # Override SUMO parsed programs with config-based conflict-free plans if available
+        self._inject_config_plans()
+
+    def _inject_config_plans(self) -> None:
+        """
+        Override the environment's TLS programs with the conflict-free phase 
+        states from kpi_config.json. This ensures it's universally applied.
+        """
+        plans_dict = self.kpi_config.fixed_time_plans
+        if not plans_dict:
+            return
+
+        for tls_id, plan in plans_dict.items():
+            if tls_id not in self.tls_programs:
+                continue
+                
+            phases = []
+            for idx, state in enumerate(plan):
+                has_green = any(c in state for c in "Gg")
+                has_yellow = any(c in state for c in "Yy")
+                
+                if has_green and not has_yellow:
+                    phase_type = 'green'
+                    duration = 0  # Green phases trigger immediately for explicit actions
+                elif has_yellow:
+                    phase_type = 'yellow'
+                    duration = self.kpi_config.simulation.yellow_fallback_seconds
+                else:
+                    phase_type = 'red'
+                    duration = 0 # Default fallback
+                    
+                phases.append(
+                    PhaseDefinition(
+                        index=idx,
+                        duration_seconds=int(duration),
+                        state=state,
+                        phase_type=phase_type
+                    )
+                )
+                
+            first_green_index = next((p.index for p in phases if p.phase_type == "green"), 0)
+            base_cycle_seconds = self.cycle_length_seconds
+            
+            self.tls_programs[tls_id] = TLSProgram(
+                tls_id=tls_id,
+                phases=tuple(phases),
+                base_cycle_seconds=base_cycle_seconds,
+                first_green_index=first_green_index
+            )
 
     def _resolve_sumo_binary(self, use_gui: bool) -> str:
         if use_gui:
@@ -308,15 +358,8 @@ class TrafficEnvironment:
                 if runtime.remaining_phase_seconds > 0:
                     continue
 
-                # Hết thời gian thì chuyển sang pha tiếp theo
+                # Khi hết thời gian bất kỳ pha nào (kể cả đã được extend), tự động chuyển pha tiếp theo
                 self._advance_to_next_phase(tls_id)
-
-                # Kiểm tra lại xem pha mới có phải là green không thay vì nhảy thẳng sang bước sau
-                new_phase = program.phases[runtime.current_phase_index]
-                if new_phase.phase_type == "green":
-                    runtime.remaining_phase_seconds = 0
-                    runtime.decision_pending = True
-                    self.required_action.add(tls_id)
 
             self.done = self._check_done()
 

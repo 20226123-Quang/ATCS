@@ -128,7 +128,8 @@ class MacroActor(nn.Module):
 			dim=-1
 		)
 
-		return log_prob
+		entropy = dist.entropy().sum(-1)
+		return log_prob, entropy
 
 class AgentAttentionAggregator(nn.Module):
 	def __init__(self, hidden_dim, num_heads):

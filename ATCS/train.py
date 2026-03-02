@@ -80,7 +80,7 @@ def main() -> None:
 	default_cfg = str(Path(__file__).resolve().parents[1] / "SimulationData" / "SampleData" / "SimpleRoute" / "config.sumocfg")
 	parser.add_argument("--sumocfg", default=default_cfg, help="Path to SUMO .sumocfg file")
 	parser.add_argument("--episodes", type=int, default=1000, help="Number of training episodes")
-	parser.add_argument("--steps", type=int, default=1000, help="Number of decision steps per episode")
+	parser.add_argument("--steps", type=int, default=300, help="Number of decision steps per episode")
 	parser.add_argument("--gui", action="store_true", help="Run with SUMO GUI")
 	parser.add_argument("--device", type=str, default="cpu", help="Device to run on (cpu, cuda, mps)")
 	args = parser.parse_args()

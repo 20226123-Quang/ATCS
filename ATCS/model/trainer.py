@@ -290,12 +290,12 @@ class ACACTrainer:
 			advantages = torch.stack([e["advantage"] for e in agent_entries]).to(self.device)
 			old_log_probs = torch.stack([e["old_log_prob"] for e in agent_entries]).to(self.device).squeeze(-1)
 
-			log_probs = self.actors[i].evaluate(hs, actions)
+			log_probs, entropy = self.actors[i].evaluate(hs, actions)
 
 			ratio = torch.exp(log_probs - old_log_probs)
 			surr1 = ratio * advantages
 			surr2 = torch.clamp(ratio, 1 - clip_eps, 1 + clip_eps) * advantages
-			loss = -torch.min(surr1, surr2).mean()
+			loss = -torch.min(surr1, surr2).mean() - 0.01 * entropy.mean()
 
 			self.optimizers["actor"][i].zero_grad()
 			loss.backward()
