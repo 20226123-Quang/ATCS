@@ -6,7 +6,7 @@ import os
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Optional, Tuple
 
 
 @dataclass(frozen=True)
@@ -60,7 +60,11 @@ def _resolve_net_file(sumocfg_path: Path) -> Path:
     return net_file_path
 
 
-def parse_sumo_network(sumocfg_path: str, yellow_fallback_seconds: int = 3) -> ParsedSUMONetwork:
+def parse_sumo_network(
+    sumocfg_path: str,
+    yellow_fallback_seconds: int = 3,
+    fixed_time_plans: Optional[Dict[str, List[tuple]]] = None,
+) -> ParsedSUMONetwork:
     """Parse SUMO `.sumocfg` and corresponding `.net.xml` traffic light programs."""
     cfg_path = Path(sumocfg_path).resolve()
     net_path = _resolve_net_file(cfg_path)
@@ -112,6 +116,38 @@ def parse_sumo_network(sumocfg_path: str, yellow_fallback_seconds: int = 3) -> P
 
     if not tls_programs:
         raise ValueError(f"No tlLogic entries found in {net_path}")
+
+    if fixed_time_plans:
+        for tls_id, plan in fixed_time_plans.items():
+            if tls_id in tls_programs:
+                phases = []
+                for idx, (duration, state) in enumerate(plan):
+                    phases.append(
+                        PhaseDefinition(
+                            index=idx,
+                            duration_seconds=max(int(duration), 0),
+                            state=state,
+                            phase_type=_classify_phase_type(state),
+                        )
+                    )
+
+                if not phases:
+                    continue
+
+                first_green_index = next(
+                    (p.index for p in phases if p.phase_type == "green"),
+                    0,
+                )
+                base_cycle_seconds = sum(p.duration_seconds for p in phases)
+                if base_cycle_seconds <= 0:
+                    base_cycle_seconds = max(len(phases) * yellow_fallback_seconds, 1)
+
+                tls_programs[tls_id] = TLSProgram(
+                    tls_id=tls_id,
+                    phases=tuple(phases),
+                    base_cycle_seconds=base_cycle_seconds,
+                    first_green_index=first_green_index,
+                )
 
     ordered_programs = {tls_id: tls_programs[tls_id] for tls_id in sorted(tls_programs)}
     return ParsedSUMONetwork(

@@ -85,7 +85,7 @@ def main() -> None:
 	parser.add_argument("--device", type=str, default="cpu", help="Device to run on (cpu, cuda, mps)")
 	args = parser.parse_args()
 
-	env = TrafficEnvironment(sumocfg_path=args.sumocfg, use_gui=args.gui)
+	env = TrafficEnvironment(sumocfg_path=args.sumocfg, use_gui=args.gui, kpi_config_path="config/kpi_config.json")
 
 	# Reset environment and get observation dimension
 	obs, reward, done, info = env.reset()

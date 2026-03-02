@@ -49,6 +49,7 @@ class TrafficEnvironment:
         self.network: ParsedSUMONetwork = parse_sumo_network(
             str(self.sumocfg_path),
             yellow_fallback_seconds=self.kpi_config.simulation.yellow_fallback_seconds,
+            fixed_time_plans=self.kpi_config.fixed_time_plans,
         )
 
         self.tls_programs: Dict[str, TLSProgram] = self.network.tls_programs
@@ -383,7 +384,7 @@ class TrafficEnvironment:
             t_remain - float(remain_phase * self.max_green_seconds + total_yellow_after),
         )
 
-        # print(f"Remain phase: {remain_phase}, total yellow after: {total_yellow_after}, t_remain: {t_remain}, min_x: {min_x}, max_x: {max_x}")
+        print(f"Remain phase: {remain_phase}, total yellow after: {total_yellow_after}, t_remain: {t_remain}, min_x: {min_x}, max_x: {max_x}")
 
         return min_x, max_x
 
