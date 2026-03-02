@@ -371,7 +371,7 @@ class TrafficEnvironment:
 
     def _build_observation_reward(self) -> Tuple[np.ndarray, np.ndarray]:
         obs = np.zeros((len(self.tls_ids), self.max_lanes, 5), dtype=np.float32)
-        reward = np.zeros((len(self.tls_ids), self.max_lanes, 2), dtype=np.float32)
+        reward = np.zeros((len(self.tls_ids), self.max_lanes, 3), dtype=np.float32)
 
         for tls_index, tls_id in enumerate(self.tls_ids):
             runtime = self.tls_runtime[tls_id]
@@ -394,6 +394,7 @@ class TrafficEnvironment:
 
                 reward[tls_index, lane_index, 0] = lane_kpi.control_delay_seconds
                 reward[tls_index, lane_index, 1] = lane_kpi.queue_length_meters
+                reward[tls_index, lane_index, 2] = lane_kpi.degree_of_saturation
 
         return obs, reward
 
