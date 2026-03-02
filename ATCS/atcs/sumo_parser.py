@@ -33,10 +33,10 @@ class ParsedSUMONetwork:
 
 
 def _classify_phase_type(state: str) -> str:
-    if any(char in state for char in ("G", "g")):
-        return "green"
     if any(char in state for char in ("y", "Y")):
         return "yellow"
+    if any(char in state for char in ("G", "g")):
+        return "green"
     return "red"
 
 

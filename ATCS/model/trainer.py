@@ -73,22 +73,15 @@ class ACACTrainer:
 			h.zero_()
 
 	def _get_current_global_state(self):
-		"""Stack hidden states: [num_agents, hidden_dim]"""
 		return torch.stack([h.detach() for h in self.hidden_states])
 
 	def _obs_to_tensor(self, obs, tls_index):
-		"""Flatten obs[tls_index] từ [max_lanes, 5] → [max_lanes * 5]"""
 		return torch.tensor(
 			obs[tls_index].flatten(), dtype=torch.float32, device=self.device
 		)
 
-	def _reward_scalar(self, reward, tls_index):
-		"""Aggregate reward[tls_index] [max_lanes, 2] → scalar (âm vì minimize)"""
-		return -float(reward[tls_index].mean())
-
 	def _global_reward_scalar(self, reward):
-		"""Global reward scalar từ toàn bộ reward [n, max_lanes, 2]"""
-		return -float(reward.mean())
+		return -float(reward[:, :, 1].mean())
 
 	def _scale_action(self, actor_output, min_ext, max_ext):
 		"""
@@ -96,7 +89,7 @@ class ACACTrainer:
 		actor_output : float trong [0, 1] (output của MacroActor với min_action=0, max_action=1)
 		Returns: float extension seconds trong [min_ext, max_ext]
 		"""
-		return min_ext + actor_output * (max_ext - min_ext)
+		return int(min_ext + actor_output * (max_ext - min_ext))
 
 	# =====================================================================
 	# Rollout
@@ -111,24 +104,14 @@ class ACACTrainer:
 		self._reset_hidden()
 		t = 0
 
-		# Pending buffer entries cho mỗi agent (chờ reward_seq)
-		pending_entries = [None] * self.num_agents
-		reward_seqs = [[] for _ in range(self.num_agents)]
-		active = [False] * self.num_agents
-
 		while not done and t < max_steps:
 			requiring = info["intersection_require_action"]  # list[str]
 			action_dict = {}
 
+			step_entries = []
+
 			for name in requiring:
 				i = self.tls_index[name]
-
-				# Finalize entry từ lần action trước (nếu có)
-				if active[i] and pending_entries[i] is not None:
-					pending_entries[i]["reward_seq"] = reward_seqs[i]
-					self.agents_buffer.store(i, pending_entries[i])
-					reward_seqs[i] = []
-					pending_entries[i] = None
 
 				# Encode quan sát mới
 				z_it = self._obs_to_tensor(obs, i)
@@ -145,27 +128,23 @@ class ACACTrainer:
 				env_action = self._scale_action(actor_val, eff_range[0], eff_range[1])
 				action_dict[name] = env_action
 
-				# Lưu pending entry (raw_action là actor output [0,1], nhất quán với evaluate)
-				active[i] = True
-				pending_entries[i] = {
+				step_entries.append({
 					"agent_id": i,
 					"t": t,
 					"h": self.hidden_states[i].detach(),
 					"global_h": None,
 					"raw_action": actor_out.detach(),  # [0, 1]
 					"old_log_prob": old_log_prob.detach(),
-					"reward_seq": [],
-				}
+				})
 
 			# Cập nhật global_h sau khi tất cả actor trong step này đã encode
 			global_h = self._get_current_global_state()
-			for name in requiring:
-				i = self.tls_index[name]
-				if pending_entries[i] is not None:
-					pending_entries[i]["global_h"] = global_h.detach()
+			for entry in step_entries:
+				entry["global_h"] = global_h.detach()
+				self.agents_buffer.store(entry["agent_id"], entry)
 
 			# Bước môi trường
-			print(f"action dict: {action_dict}")
+			# print(f"action dict: {action_dict}")
 			next_obs, reward, done, info = env.step(action_dict)
 
 			# Lưu critic buffer
@@ -175,19 +154,8 @@ class ACACTrainer:
 				"reward": self._global_reward_scalar(reward),
 			})
 
-			# Tích lũy reward cho từng agent đang active
-			for i in range(self.num_agents):
-				if active[i]:
-					reward_seqs[i].append(self._reward_scalar(reward, i))
-
 			obs = next_obs
 			t += info["delta_t"]  # thời gian thực env đã chạy (giây)
-
-		# Finalize tất cả macros chưa kết thúc
-		for i in range(self.num_agents):
-			if pending_entries[i] is not None:
-				pending_entries[i]["reward_seq"] = reward_seqs[i]
-				self.agents_buffer.store(i, pending_entries[i])
 
 	# =====================================================================
 	# Evaluation
@@ -202,6 +170,8 @@ class ACACTrainer:
 		self._reset_hidden()
 		t = 0
 		total_reward = 0.0
+		total_delay = 0.0
+		total_queue = 0.0
 
 		while not done and t < max_steps:
 			requiring = info["intersection_require_action"]
@@ -214,10 +184,12 @@ class ACACTrainer:
 				self.hidden_states[i] = self.encoders[i](z_it, p_it, self.hidden_states[i])
 				actor_out, _ = self.actors[i].sample(self.hidden_states[i])
 				actor_val = float(actor_out.detach().item())
-				eff_range = info.get("effective_action_range", {}).get(name, (0.0, info["max_green"]))
+				eff_range = info.get("effective_action_range", {}).get(name, (info["min_green"], info["max_green"]))
 				action_dict[name] = self._scale_action(actor_val, eff_range[0], eff_range[1])
 
 			next_obs, reward, done, info = env.step(action_dict)
+			total_delay += reward[:, :, 0].mean()
+			total_queue += reward[:, :, 1].mean()
 			total_reward += self._global_reward_scalar(reward)
 			obs = next_obs
 			t += info["delta_t"]
@@ -225,6 +197,8 @@ class ACACTrainer:
 		return {
 			"total_reward": total_reward,
 			"avg_reward": total_reward / max(t, 1),
+			"delay": total_delay / max(t, 1),
+			"queue": total_queue / max(t, 1),
 		}
 
 	# =====================================================================
@@ -232,47 +206,68 @@ class ACACTrainer:
 	# =====================================================================
 
 	def compute_advantages(self):
-		for i in range(self.num_agents):
-			traj = self.agents_buffer.get_agent_traj(i)
-			if len(traj) == 0:
-				continue
-
-			states = torch.stack([e["global_h"] for e in traj]).to(self.device)
-
-			with torch.no_grad():
-				values = self.critic(states)
-
-			gae = 0
-			next_value = 0
-
-			for k in reversed(range(len(traj))):
-				rewards = traj[k]["reward_seq"]
-				R = 0
-				for r in reversed(rewards):
-					R = r + self.gamma * R
-
-				delta = R + (self.gamma ** len(rewards)) * next_value - values[k]
-				gae = delta + (self.gamma ** len(rewards)) * self.lam * gae
-
-				traj[k]["advantage"] = gae.detach()
-				traj[k]["return"] = (gae + values[k]).detach()
-				next_value = values[k]
-
-	def compute_returns(self):
 		traj = self.critic_buffer.buffers
+		if len(traj) == 0:
+			return
+
+		states = torch.stack([e["global_h"] for e in traj]).to(self.device)
+
+		with torch.no_grad():
+			values = self.critic(states).squeeze(-1)
+
+		gae = 0
+		advantage_map = {}
+
 		for k in reversed(range(len(traj))):
 			reward = traj[k]["reward"]
-			next_value = 0 if k == len(traj) - 1 else traj[k + 1]["return"]
-			traj[k]["return"] = reward + self.gamma * next_value
+			if k == len(traj) - 1:
+				next_value = 0
+				dt = 1
+			else:
+				next_value = values[k + 1]
+				dt = traj[k + 1]["t"] - traj[k]["t"]
+
+			gamma_dt = self.gamma ** dt
+			delta = reward + gamma_dt * next_value - values[k]
+			gae = delta + gamma_dt * self.lam * gae
+
+			traj[k]["advantage"] = gae.detach()
+			traj[k]["return"] = (gae + values[k]).detach()
+			
+			advantage_map[traj[k]["t"]] = traj[k]["advantage"]
+
+		# Add logic to assign advantages for actors at their decision timestep
+		for i in range(self.num_agents):
+			agent_traj = self.agents_buffer.get_agent_traj(i)
+			if len(agent_traj) == 0:
+				continue
+				
+			for e in agent_traj:
+				t_start = e["t"]
+				
+				# The actor uses the advantage at the exact timestep it made the decision.
+				# A_t computes the advantage AT timestep `t_start` looking forward up to `t_next`.
+				# This matches the definition where GAE(t) estimates sum(td_errors).
+				if t_start in advantage_map:
+					e["advantage"] = advantage_map[t_start]
+				else:
+					print(f"Warning: No advantage found for timestep {t_start}")
+					e["advantage"] = 0.0
 
 	def update_critic(self):
+		if len(self.critic_buffer.buffers) == 0:
+			return 0.0
+
 		states = torch.stack([e["global_h"] for e in self.critic_buffer.buffers]).to(self.device)
 		returns = torch.tensor(
 			[e["return"] for e in self.critic_buffer.buffers],
 			dtype=torch.float32, device=self.device
 		)
 
-		values = self.critic(states)
+		# print(f"states: {states.shape}")
+		# print(f"returns: {returns.shape}")
+
+		values = self.critic(states).squeeze(-1)
 		value_loss = F.mse_loss(values, returns)
 
 		self.optimizers["critic"].zero_grad()
@@ -314,7 +309,7 @@ class ACACTrainer:
 	def train_episode(self, env, max_steps=None):
 		self.collect_async_rollout(env, max_steps=max_steps or 1000)
 		self.compute_advantages()
-		self.compute_returns()
+		# compute_returns is now handled inside compute_advantages
 		critic_loss = self.update_critic()
 		actor_losses = self.update_actors()
 

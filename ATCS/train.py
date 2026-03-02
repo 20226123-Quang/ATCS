@@ -77,9 +77,9 @@ def initialize_acac(obs_dim, action_dim, min_action, max_action, tls_names,
 
 def main() -> None:
 	parser = argparse.ArgumentParser()
-	default_cfg = str(Path(__file__).resolve().parents[1] / "SimulationData" / "SampleData" / "HighPriorityVehicles" / "config.sumocfg")
+	default_cfg = str(Path(__file__).resolve().parents[1] / "SimulationData" / "SampleData" / "SimpleRoute" / "config.sumocfg")
 	parser.add_argument("--sumocfg", default=default_cfg, help="Path to SUMO .sumocfg file")
-	parser.add_argument("--episodes", type=int, default=10, help="Number of training episodes")
+	parser.add_argument("--episodes", type=int, default=1000, help="Number of training episodes")
 	parser.add_argument("--steps", type=int, default=1000, help="Number of decision steps per episode")
 	parser.add_argument("--gui", action="store_true", help="Run with SUMO GUI")
 	parser.add_argument("--device", type=str, default="cpu", help="Device to run on (cpu, cuda, mps)")
@@ -107,17 +107,34 @@ def main() -> None:
 		device=device
 	)
 
+	import matplotlib.pyplot as plt
+
+	episode_rewards = []
 	for ep in range(args.episodes):
 		print(f"\n--- Episode {ep+1}/{args.episodes} ---")
 		metrics = trainer.train_episode(env, max_steps=args.steps)
-		print(f"Reward: {metrics['reward']:.2f}")
+		ep_reward = metrics['reward']
+		episode_rewards.append(ep_reward)
+		print(f"Reward: {ep_reward:.2f}")
 		print(f"Critic Loss: {metrics['critic_loss']:.4f}")
 		for i, aloss in metrics['actor_losses'].items():
 			print(f"  Actor {i} Loss: {aloss:.4f}")
 
-	print("\nTraining complete. Saving model to acac_checkpoint.pt")
-	trainer.save_model("acac_checkpoint.pt")
-	env.close()
+		print("\nTraining complete. Saving model to acac_checkpoint.pt")
+		trainer.save_model("acac_checkpoint.pt")
+		env.close()
+
+		# Plot rewards
+		plt.figure(figsize=(10, 6))
+		plt.plot(range(1, ep + 2), episode_rewards, marker='o', linestyle='-')
+		plt.title("Training Reward over Episodes")
+		plt.xlabel("Episode")
+		plt.ylabel("Total Reward")
+		plt.grid(True)
+		plt.savefig("reward_plot.png")
+		print("Saved reward plot to reward_plot.png")
+		# plt.show()
+		plt.close()
 
 if __name__ == "__main__":
 	main()
