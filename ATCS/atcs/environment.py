@@ -23,7 +23,6 @@ class TLSRuntimeState:
     cycle_elapsed_seconds: int
     cycle_length_seconds: int
     decision_pending: bool = True
-    current_phase_elapsed_seconds: int = 0
 
 
 class TrafficEnvironment:
@@ -43,13 +42,11 @@ class TrafficEnvironment:
         max_episode_seconds: Optional[int] = None,
         sumo_binary: Optional[str] = None,
     ) -> None:
-        self.connected = False
         self.sumocfg_path = Path(sumocfg_path).resolve()
         self.kpi_config: KPIConfig = load_kpi_config(kpi_config_path)
         self.network: ParsedSUMONetwork = parse_sumo_network(
             str(self.sumocfg_path),
             yellow_fallback_seconds=self.kpi_config.simulation.yellow_fallback_seconds,
-            fixed_time_plans=self.kpi_config.fixed_time_plans,
         )
 
         self.tls_programs: Dict[str, TLSProgram] = self.network.tls_programs
@@ -70,6 +67,7 @@ class TrafficEnvironment:
 
         self.sumo_binary = sumo_binary or self._resolve_sumo_binary(self.use_gui)
         self.connection_label = f"ATCS_{uuid.uuid4().hex[:8]}"
+        self.connected = False
 
         self.kpi_engine = KPIEngine(self.kpi_config.constants)
         self.tls_runtime: Dict[str, TLSRuntimeState] = {}
@@ -213,7 +211,6 @@ class TrafficEnvironment:
                 cycle_elapsed_seconds=0,
                 cycle_length_seconds=self.cycle_length_seconds,
                 decision_pending=True,
-                current_phase_elapsed_seconds=0,
             )
             traci.trafficlight.setRedYellowGreenState(tls_id, phase.state)
             self._reset_cycle_lane_metrics(tls_id)
@@ -297,7 +294,6 @@ class TrafficEnvironment:
 
             phase = program.phases[next_index]
             runtime.remaining_phase_seconds = max(int(phase.duration_seconds), 0)
-            runtime.current_phase_elapsed_seconds = 0
             runtime.decision_pending = False
             traci.trafficlight.setRedYellowGreenState(tls_id, phase.state)
 
@@ -317,16 +313,17 @@ class TrafficEnvironment:
 
         for tls_id in pending_tls_ids:
             runtime = self.tls_runtime[tls_id]
-            green_time = float(action.get(tls_id, 0.0))
-            min_x, max_x = self._compute_effective_green_range(tls_id)
-            
-            # Cắt giá trị vào đúng khoảng x hợp lệ
-            green_time = min(max(green_time, float(min_x)), float(max_x))
-            green_seconds = int(round(green_time))
+            extension = float(action.get(tls_id, 0.0))
+            extension = min(max(extension, 0.0), float(self.max_extension_seconds))
+            extension_seconds = int(round(extension))
 
             runtime.decision_pending = False
-            # Gán thẳng thời gian đèn xanh bằng duration action truyền vào
-            runtime.remaining_phase_seconds = green_seconds
+            if extension_seconds > 0:
+                runtime.remaining_phase_seconds += extension_seconds
+                # NOTE: cycle_length_seconds is NOT modified here because
+                # the cycle is fixed by config (cycle_length_seconds in kpi_config.json).
+                # The RL agent only extends the current green phase,
+                # but the total cycle boundary stays at the configured value.
 
             if runtime.remaining_phase_seconds <= 0:
                 self._advance_to_next_phase(tls_id)
@@ -349,7 +346,6 @@ class TrafficEnvironment:
                 program = self.tls_programs[tls_id]
                 phase = program.phases[runtime.current_phase_index]
                 runtime.cycle_elapsed_seconds += self.step_length_seconds
-                runtime.current_phase_elapsed_seconds += self.step_length_seconds
 
                 if phase.phase_type == "green":
                     self._mark_green_seconds_for_tls(tls_id, phase.state)
@@ -409,10 +405,13 @@ class TrafficEnvironment:
         program = self.tls_programs[tls_id]
 
         # Thời gian còn lại trong chu kỳ (tính từ LÚC BẮT ĐẦU pha xanh hiện tại)
-        t_remain = float(runtime.cycle_length_seconds - runtime.cycle_elapsed_seconds + runtime.current_phase_elapsed_seconds)
+        t_remain = float(
+            runtime.cycle_length_seconds
+            - runtime.cycle_elapsed_seconds
+        )
 
         # Thống kê các pha SAU pha hiện tại
-        phases_after = program.phases[runtime.current_phase_index + 1:]
+        phases_after = program.phases[runtime.current_phase_index + 1 :]
         remain_phase = sum(1 for p in phases_after if p.phase_type == "green")
         total_yellow_after = sum(
             p.duration_seconds for p in phases_after if p.phase_type != "green"
@@ -420,17 +419,18 @@ class TrafficEnvironment:
 
         max_x = min(
             float(self.max_green_seconds),
-            t_remain - float(remain_phase * self.min_green_seconds + total_yellow_after),
+            t_remain
+            - float(remain_phase * self.min_green_seconds + total_yellow_after),
         )
         min_x = max(
             float(self.min_green_seconds),
-            t_remain - float(remain_phase * self.max_green_seconds + total_yellow_after),
+            t_remain
+            - float(remain_phase * self.max_green_seconds + total_yellow_after),
         )
 
         print(f"Remain phase: {remain_phase}, total yellow after: {total_yellow_after}, t_remain: {t_remain}, min_x: {min_x}, max_x: {max_x}")
 
         return min_x, max_x
-
 
     def _build_info(self, delta_t: int) -> Dict[str, object]:
         cycle_length_map = {
