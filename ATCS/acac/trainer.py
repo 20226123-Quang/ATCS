@@ -115,6 +115,8 @@ class ACACTrainer:
 
 				# Encode quan sát mới
 				z_it = self._obs_to_tensor(obs, i)
+				eff_range = info.get("effective_action_range", {}).get(name, (info["min_green"], info["max_green"]))
+				z_it = torch.cat([z_it, torch.tensor(eff_range, dtype=torch.float32).to(self.device)], dim=-1)
 				p_it = self.time_encoder(t).to(self.device)
 				self.hidden_states[i] = self.encoders[i](z_it, p_it, self.hidden_states[i])
 
@@ -123,7 +125,6 @@ class ACACTrainer:
 				actor_val = float(actor_out.detach().item())  # [0, 1]
 
 				# Scale sang kự năng có hiệu lực [min_ext, max_ext]
-				eff_range = info.get("effective_action_range", {}).get(name, (info["min_green"], info["max_green"]))
 				print(f"eff_range: {eff_range}")
 				env_action = self._scale_action(actor_val, eff_range[0], eff_range[1])
 				action_dict[name] = env_action
@@ -180,11 +181,12 @@ class ACACTrainer:
 			for name in requiring:
 				i = self.tls_index[name]
 				z_it = self._obs_to_tensor(obs, i)
+				eff_range = info.get("effective_action_range", {}).get(name, (info["min_green"], info["max_green"]))
+				z_it = torch.cat([z_it, torch.tensor(eff_range, dtype=torch.float32).to(self.device)], dim=-1)
 				p_it = self.time_encoder(t).to(self.device)
 				self.hidden_states[i] = self.encoders[i](z_it, p_it, self.hidden_states[i])
 				actor_out, _ = self.actors[i].sample(self.hidden_states[i])
 				actor_val = float(actor_out.detach().item())
-				eff_range = info.get("effective_action_range", {}).get(name, (info["min_green"], info["max_green"]))
 				action_dict[name] = self._scale_action(actor_val, eff_range[0], eff_range[1])
 
 			next_obs, reward, done, info = env.step(action_dict)
@@ -216,6 +218,7 @@ class ACACTrainer:
 			values = self.critic(states).squeeze(-1)
 
 		gae = 0
+		ret = 0
 		advantage_map = {}
 
 		for k in reversed(range(len(traj))):
@@ -230,9 +233,10 @@ class ACACTrainer:
 			gamma_dt = self.gamma ** dt
 			delta = reward + gamma_dt * next_value - values[k]
 			gae = delta + gamma_dt * self.lam * gae
+			ret = reward + gamma_dt * ret
 
 			traj[k]["advantage"] = gae.detach()
-			traj[k]["return"] = (gae + values[k]).detach()
+			traj[k]["return"] = ret if isinstance(ret, torch.Tensor) else torch.tensor(ret, dtype=torch.float32, device=self.device)
 			
 			advantage_map[traj[k]["t"]] = traj[k]["advantage"]
 
@@ -254,30 +258,31 @@ class ACACTrainer:
 					print(f"Warning: No advantage found for timestep {t_start}")
 					e["advantage"] = 0.0
 
-	def update_critic(self):
+	def update_critic(self, n_epochs=4):
 		if len(self.critic_buffer.buffers) == 0:
 			return 0.0
 
 		states = torch.stack([e["global_h"] for e in self.critic_buffer.buffers]).to(self.device)
-		returns = torch.tensor(
-			[e["return"] for e in self.critic_buffer.buffers],
-			dtype=torch.float32, device=self.device
-		)
+		returns = torch.stack([
+			e["return"] if isinstance(e["return"], torch.Tensor)
+			else torch.tensor(e["return"], dtype=torch.float32)
+			for e in self.critic_buffer.buffers
+		]).to(self.device).float()
 
-		# print(f"states: {states.shape}")
-		# print(f"returns: {returns.shape}")
+		loss_val = 0.0
+		for _ in range(n_epochs):
+			values = self.critic(states).squeeze(-1)
+			value_loss = F.smooth_l1_loss(values, returns)
 
-		values = self.critic(states).squeeze(-1)
-		value_loss = F.mse_loss(values, returns)
+			self.optimizers["critic"].zero_grad()
+			value_loss.backward()
+			torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 0.5)
+			self.optimizers["critic"].step()
+			loss_val = value_loss.item()
 
-		self.optimizers["critic"].zero_grad()
-		value_loss.backward()
-		torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 0.5)
-		self.optimizers["critic"].step()
+		return loss_val
 
-		return value_loss.item()
-
-	def update_actors(self, clip_eps=0.2):
+	def update_actors(self, clip_eps=0.2, n_epochs=4):
 		actor_losses = {}
 
 		for i in range(self.num_agents):
@@ -288,19 +293,22 @@ class ACACTrainer:
 			hs = torch.stack([e["h"] for e in agent_entries]).to(self.device)
 			actions = torch.stack([e["raw_action"] for e in agent_entries]).to(self.device)
 			advantages = torch.stack([e["advantage"] for e in agent_entries]).to(self.device)
+			if advantages.numel() > 1:
+				advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 			old_log_probs = torch.stack([e["old_log_prob"] for e in agent_entries]).to(self.device).squeeze(-1)
 
-			log_probs, entropy = self.actors[i].evaluate(hs, actions)
+			for epoch in range(n_epochs):
+				log_probs, entropy = self.actors[i].evaluate(hs, actions)
+				ratio = torch.exp(log_probs - old_log_probs)
+				print(f"[Agent {i}] epoch={epoch} ratio={ratio}")
+				surr1 = ratio * advantages
+				surr2 = torch.clamp(ratio, 1 - clip_eps, 1 + clip_eps) * advantages
+				loss = -torch.min(surr1, surr2).mean()
 
-			ratio = torch.exp(log_probs - old_log_probs)
-			surr1 = ratio * advantages
-			surr2 = torch.clamp(ratio, 1 - clip_eps, 1 + clip_eps) * advantages
-			loss = -torch.min(surr1, surr2).mean() - 0.01 * entropy.mean()
-
-			self.optimizers["actor"][i].zero_grad()
-			loss.backward()
-			torch.nn.utils.clip_grad_norm_(self.actors[i].parameters(), 0.5)
-			self.optimizers["actor"][i].step()
+				self.optimizers["actor"][i].zero_grad()
+				loss.backward()
+				torch.nn.utils.clip_grad_norm_(self.actors[i].parameters(), 0.5)
+				self.optimizers["actor"][i].step()
 
 			actor_losses[i] = loss.item()
 

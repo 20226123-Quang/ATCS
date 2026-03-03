@@ -101,10 +101,8 @@ class MacroActor(nn.Module):
 		"""
 		mean, std = self.forward(h_it)
 		dist = Normal(mean, std)
-		raw_action = dist.rsample()
+		raw_action = dist.rsample()  # shape: [macro_action_dim] or [T, macro_action_dim]
 
-		if self.macro_action_dim == 1 and raw_action.dim() == 1:
-			raw_action = raw_action.unsqueeze(-1)
 		log_prob = dist.log_prob(raw_action).sum(-1)
 		log_prob -= torch.sum(
 			torch.log(1 - torch.tanh(raw_action) ** 2 + _EPS),
@@ -118,10 +116,8 @@ class MacroActor(nn.Module):
 		mean, std = self.forward(h_it)
 		dist = Normal(mean, std)
 
-		raw_action = self._unsquash_and_unscale(action)
+		raw_action = self._unsquash_and_unscale(action)  # shape: [T, macro_action_dim]
 
-		if self.macro_action_dim == 1 and raw_action.dim() == 1:
-			raw_action = raw_action.unsqueeze(-1)
 		log_prob = dist.log_prob(raw_action).sum(-1)
 		log_prob -= torch.sum(
 			torch.log(1 - torch.tanh(raw_action) ** 2 + _EPS),

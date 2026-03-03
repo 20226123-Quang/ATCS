@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 
 import torch
-from model import (
+from acac import (
 	SinusoidalPositionalEncoding, CentralizedCritic, AgentHistoryEncoder, MacroActor,
 	AsyncTrajectoryBuffer, SyncTrajectoryBuffer,
 	ACACTrainer,
@@ -77,9 +77,9 @@ def initialize_acac(obs_dim, action_dim, min_action, max_action, tls_names,
 
 def main() -> None:
 	parser = argparse.ArgumentParser()
-	default_cfg = str(Path(__file__).resolve().parents[1] / "SimulationData" / "SampleData" / "SimpleRoute" / "config.sumocfg")
+	default_cfg = str(Path(__file__).resolve().parents[1] / "SimulationData" / "SampleData" / "OneIntersect" / "config_one_car_no_delay.sumocfg")
 	parser.add_argument("--sumocfg", default=default_cfg, help="Path to SUMO .sumocfg file")
-	parser.add_argument("--episodes", type=int, default=1000, help="Number of training episodes")
+	parser.add_argument("--episodes", type=int, default=300, help="Number of training episodes")
 	parser.add_argument("--steps", type=int, default=300, help="Number of decision steps per episode")
 	parser.add_argument("--gui", action="store_true", help="Run with SUMO GUI")
 	parser.add_argument("--device", type=str, default="cpu", help="Device to run on (cpu, cuda, mps)")
@@ -89,14 +89,15 @@ def main() -> None:
 
 	# Reset environment and get observation dimension
 	obs, reward, done, info = env.reset()
-	obs_dim = obs.shape[1] * obs.shape[2]
-	print(f"Observation dimension: {obs_dim}")
+	obs_dim = obs.shape[1] * obs.shape[2]  # max_lanes * 5
+	obs_encoder_dim = obs_dim + 2  # +2 for eff_range (min_green, max_green) concat
+	print(f"Observation dimension: {obs_dim} (encoder input: {obs_encoder_dim})")
 
 	device = torch.device(args.device)
 	print(f"Using device: {device}")
 
 	trainer = initialize_acac(
-		obs_dim=obs_dim,
+		obs_dim=obs_encoder_dim,
 		action_dim=1,
 		min_action=0.0,
 		max_action=1.0,
@@ -108,6 +109,8 @@ def main() -> None:
 	)
 
 	import matplotlib.pyplot as plt
+	import subprocess
+	import sys
 
 	episode_rewards = []
 	for ep in range(args.episodes):
@@ -120,11 +123,7 @@ def main() -> None:
 		for i, aloss in metrics['actor_losses'].items():
 			print(f"  Actor {i} Loss: {aloss:.4f}")
 
-		print("\nTraining complete. Saving model to acac_checkpoint.pt")
-		trainer.save_model("acac_checkpoint.pt")
-		env.close()
-
-		# Plot rewards
+		# Plot rewards after each episode
 		plt.figure(figsize=(10, 6))
 		plt.plot(range(1, ep + 2), episode_rewards, marker='o', linestyle='-')
 		plt.title("Training Reward over Episodes")
@@ -132,9 +131,22 @@ def main() -> None:
 		plt.ylabel("Total Reward")
 		plt.grid(True)
 		plt.savefig("reward_plot.png")
-		print("Saved reward plot to reward_plot.png")
-		# plt.show()
 		plt.close()
+
+	print("\nTraining complete. Saving model to acac_checkpoint.pt")
+	trainer.save_model("acac_checkpoint.pt")
+	env.close()
+	print("Saved reward plot to reward_plot.png")
+
+	# ---- Auto-evaluate với GUI sau khi training xong ----
+	print("\nLaunching GUI evaluation...")
+	evaluate_script = str(Path(__file__).resolve().parent / "evaluate.py")
+	subprocess.run([
+		sys.executable, evaluate_script,
+		"--sumocfg", args.sumocfg,
+		"--checkpoint", "acac_checkpoint.pt",
+		"--steps", str(args.steps),
+	], check=False)
 
 if __name__ == "__main__":
 	main()
