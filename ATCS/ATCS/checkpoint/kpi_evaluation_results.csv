@@ -1,0 +1,7 @@
+Scenario,Wait Time (s),Queue Length (m),Degree of Saturation
+Crowded 2Intersection,79.36495,29.39231,4.0357437
+Crowded 3Intersection,78.72967,14.626316,2.9719856
+Crowded 4Intersection,76.49863,13.221282,2.3413823
+Normal 2Intersection,77.69572,14.890076,3.9026127
+Normal 3Intersection,71.14884,4.8904324,2.4637928
+Normal 4Intersection,65.19874,4.148497,1.776945

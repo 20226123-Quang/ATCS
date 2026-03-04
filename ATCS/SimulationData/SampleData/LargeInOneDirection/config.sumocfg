@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-01-04T18:10:19.091052+07:00 by Eclipse SUMO sumo 1.25.0
+-->
+
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <configuration>
+        <configuration-file value=""/>
+    </configuration>
+
+    <input>
+        <net-file value="network.net.xml"/>
+        <route-files value="time_based_routes.rou.xml"/>
+    </input>
+
+    <gui_only>
+        <edgedata-files value=""/>
+    </gui_only>
+
+</sumoConfiguration>

@@ -1,0 +1,98 @@
+[
+  {
+    "node_count": 2,
+    "repeat": 0,
+    "steps": 1500,
+    "wall_time_sec": 2.6733936999808066,
+    "cpu_time_sec": 1.296875,
+    "peak_rss_mb": 56.609375,
+    "total_reward": -337102.3500000002,
+    "avg_reward": -224.73490000000015,
+    "arrived_vehicles": 69,
+    "avg_queue_length": 168.10266666666666
+  },
+  {
+    "node_count": 2,
+    "repeat": 1,
+    "steps": 1500,
+    "wall_time_sec": 2.6399021000252105,
+    "cpu_time_sec": 1.21875,
+    "peak_rss_mb": 56.578125,
+    "total_reward": -337102.3500000002,
+    "avg_reward": -224.73490000000015,
+    "arrived_vehicles": 69,
+    "avg_queue_length": 168.10266666666666
+  },
+  {
+    "node_count": 3,
+    "repeat": 0,
+    "steps": 1500,
+    "wall_time_sec": 3.560012399975676,
+    "cpu_time_sec": 1.734375,
+    "peak_rss_mb": 56.71875,
+    "total_reward": -506459.03,
+    "avg_reward": -337.63935333333336,
+    "arrived_vehicles": 102,
+    "avg_queue_length": 238.76466666666667
+  },
+  {
+    "node_count": 3,
+    "repeat": 1,
+    "steps": 1500,
+    "wall_time_sec": 3.5361335999914445,
+    "cpu_time_sec": 1.578125,
+    "peak_rss_mb": 56.77734375,
+    "total_reward": -506459.03,
+    "avg_reward": -337.63935333333336,
+    "arrived_vehicles": 102,
+    "avg_queue_length": 238.76466666666667
+  },
+  {
+    "node_count": 4,
+    "repeat": 0,
+    "steps": 1500,
+    "wall_time_sec": 4.353567700018175,
+    "cpu_time_sec": 2.203125,
+    "peak_rss_mb": 56.8984375,
+    "total_reward": -683840.3799999998,
+    "avg_reward": -455.8935866666665,
+    "arrived_vehicles": 118,
+    "avg_queue_length": 299.988
+  },
+  {
+    "node_count": 4,
+    "repeat": 1,
+    "steps": 1500,
+    "wall_time_sec": 4.369239399966318,
+    "cpu_time_sec": 1.9375,
+    "peak_rss_mb": 56.921875,
+    "total_reward": -683840.3799999998,
+    "avg_reward": -455.8935866666665,
+    "arrived_vehicles": 118,
+    "avg_queue_length": 299.988
+  },
+  {
+    "node_count": 5,
+    "repeat": 0,
+    "steps": 1500,
+    "wall_time_sec": 5.259604700026102,
+    "cpu_time_sec": 2.703125,
+    "peak_rss_mb": 57.0546875,
+    "total_reward": -752140.6200000003,
+    "avg_reward": -501.4270800000002,
+    "arrived_vehicles": 99,
+    "avg_queue_length": 360.97333333333336
+  },
+  {
+    "node_count": 5,
+    "repeat": 1,
+    "steps": 1500,
+    "wall_time_sec": 5.290143599966541,
+    "cpu_time_sec": 2.359375,
+    "peak_rss_mb": 57.07421875,
+    "total_reward": -752140.6200000003,
+    "avg_reward": -501.4270800000002,
+    "arrived_vehicles": 99,
+    "avg_queue_length": 360.97333333333336
+  }
+]
