@@ -1,0 +1,3 @@
+[submodule "ATCS"]
+	path = ATCS
+	url = https://github.com/20226123-Quang/ELCOM-ITS.git
