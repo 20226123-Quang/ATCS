@@ -67,6 +67,8 @@ class MacroActor(nn.Module):
 		self.net = nn.Sequential(
 			nn.Linear(hidden_dim, hidden_dim),
 			nn.ReLU(),
+			nn.Linear(hidden_dim, hidden_dim),
+			nn.ReLU(),
 		)
 
 		self.mean = nn.Linear(hidden_dim, macro_action_dim)
@@ -159,4 +161,4 @@ class CentralizedCritic(nn.Module):
 	def forward(self, h_all):
 		h_global = self.aggregator(h_all)
 		value = self.value_head(h_global)
-		return value.squeeze(-1)
+		return value  # shape: [T, 1] — trainer tự squeeze để tránh double-squeeze

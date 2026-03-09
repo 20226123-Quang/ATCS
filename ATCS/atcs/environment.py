@@ -275,6 +275,19 @@ class TrafficEnvironment:
             if lane_has_green:
                 self.kpi_engine.mark_lane_green_seconds(lane_id, self.step_length_seconds)
 
+    def _snapshot_green_end_queues(self, tls_id: str, phase_state: str) -> None:
+        """Snapshot current queue for all lanes that were green.
+        Feeds N_cb for HBS 2001 formula F-23."""
+        lane_index_map = self.lane_link_indices.get(tls_id, {})
+        for lane_id in self.lanes_by_tls.get(tls_id, []):
+            link_indices = lane_index_map.get(lane_id, [])
+            lane_has_green = any(
+                idx < len(phase_state) and phase_state[idx] in ("G", "g")
+                for idx in link_indices
+            )
+            if lane_has_green:
+                self.kpi_engine.snapshot_green_end_queue(lane_id)
+
     def _advance_to_next_phase(self, tls_id: str) -> None:
         runtime = self.tls_runtime[tls_id]
         program = self.tls_programs[tls_id]
@@ -392,9 +405,9 @@ class TrafficEnvironment:
                 obs[tls_index, lane_index, 3] = remaining_cycle
                 obs[tls_index, lane_index, 4] = current_phase
 
-                reward[tls_index, lane_index, 0] = lane_kpi.control_delay_seconds
-                reward[tls_index, lane_index, 1] = lane_kpi.queue_length_meters
-                reward[tls_index, lane_index, 2] = lane_kpi.degree_of_saturation
+                reward[tls_index, lane_index, 0] = -lane_kpi.control_delay_seconds
+                reward[tls_index, lane_index, 1] = -lane_kpi.queue_length_meters
+                reward[tls_index, lane_index, 2] = -lane_kpi.degree_of_saturation
 
         return obs, reward
 

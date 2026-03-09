@@ -14,10 +14,7 @@
     "use_gui": false
   },
   "kpi_formulas": {
-    "average_control_delay": "d = d1 * PF + d2 + d3",
-    "uniform_delay_d1": "d1 = 0.5 * C * (1 - g/C)^2 / (1 - min(1, v/c) * g/C)",
-    "incremental_delay_d2": "d2 = k * max(0, v/c - 1)^p * C + saturation_penalty(v/c)",
-    "initial_queue_delay_d3": "d3 = Q_initial / arrival_rate",
+    "average_control_delay_microscopic": "d = Total_Wait_Time / max(1, Total_Vehicles)",
     "degree_of_saturation": "v/c = V / C_cap",
     "capacity": "C_cap = s * (g/C) * N",
     "average_queue_length": "L = Q_avg * S_L",

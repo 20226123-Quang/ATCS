@@ -29,6 +29,8 @@ class TrainingSettings:
     lam: float
     eps_clip: float
     eps: float
+    vf_coef: float   # c1: value function loss coefficient
+    ent_coef: float  # c2: entropy bonus coefficient
 
 
 @dataclass(frozen=True)
@@ -72,6 +74,8 @@ def load_model_config(config_path: Optional[str] = None) -> ModelConfig:
         lam=float(t.get("lam", 0.95)),
         eps_clip=float(t.get("eps_clip", 0.2)),
         eps=float(t.get("eps", 1e-6)),
+        vf_coef=float(t.get("vf_coef", 0.5)),
+        ent_coef=float(t.get("ent_coef", 0.01)),
     )
 
     return ModelConfig(path=path, model=model, training=training)

@@ -15,10 +15,13 @@
     "training": {
         "buffer_size": 10000,
         "actor_lr": 1e-4,
-        "critic_lr": 1e-3,
+        "critic_lr": 1e-4,
         "gamma": 0.99,
         "lam": 0.95,
         "eps_clip": 0.2,
-        "eps": 1e-6
+        "actor_update_mode": "ac",
+        "eps": 1e-6,
+        "vf_coef": 0.5,
+        "ent_coef": 0.01
     }
 }
