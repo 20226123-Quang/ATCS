@@ -82,9 +82,9 @@ def initialize_acac(obs_dim, action_dim, min_action, max_action, tls_names,
 
 def main() -> None:
 	parser = argparse.ArgumentParser()
-	default_cfg = str(Path(__file__).resolve().parents[1] / "SimulationData" / "SampleData" / "OneIntersect" / "config_one_car_delay_120.sumocfg")
+	default_cfg = str(Path(__file__).resolve().parents[1] / "SimulationData" / "SampleData" / "OneIntersect" / "config_one_car_delay_40_5_cars.sumocfg")
 	parser.add_argument("--sumocfg", default=default_cfg, help="Path to SUMO .sumocfg file")
-	parser.add_argument("--episodes", type=int, default=500, help="Number of training episodes")
+	parser.add_argument("--episodes", type=int, default=1000, help="Number of training episodes")
 	parser.add_argument("--steps", type=int, default=300, help="Number of decision steps per episode")
 	parser.add_argument("--gui", action="store_true", help="Run with SUMO GUI")
 	parser.add_argument("--device", type=str, default="cpu", help="Device to run on (cpu, cuda, mps)")
