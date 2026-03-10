@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="16.67" guiShape="passenger"/>
+    <vehicle id="veh0" type="car" depart="1.30">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh1" type="car" depart="5.00">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh2" type="car" depart="5.31">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh3" type="car" depart="5.96">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh4" type="car" depart="9.16">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh5" type="car" depart="15.96">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh6" type="car" depart="17.39">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh7" type="car" depart="18.55">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh8" type="car" depart="19.34">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh9" type="car" depart="20.20">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh10" type="car" depart="31.10">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh11" type="car" depart="39.77">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh12" type="car" depart="43.73">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh13" type="car" depart="44.09">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh14" type="car" depart="44.64">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh15" type="car" depart="45.58">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh16" type="car" depart="46.56">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh17" type="car" depart="55.01">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh18" type="car" depart="55.59">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh19" type="car" depart="57.88">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh20" type="car" depart="67.32">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh21" type="car" depart="68.05">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh22" type="car" depart="72.97">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh23" type="car" depart="75.71">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh24" type="car" depart="84.38">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh25" type="car" depart="101.07">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh26" type="car" depart="107.25">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh27" type="car" depart="108.99">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh28" type="car" depart="110.41">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh29" type="car" depart="115.47">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh30" type="car" depart="117.85">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh31" type="car" depart="120.75">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh32" type="car" depart="123.70">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh33" type="car" depart="127.14">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh34" type="car" depart="127.89">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh35" type="car" depart="129.98">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh36" type="car" depart="135.34">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh37" type="car" depart="139.63">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh38" type="car" depart="140.91">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh39" type="car" depart="145.95">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh40" type="car" depart="147.29">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh41" type="car" depart="161.16">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh42" type="car" depart="161.43">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh43" type="car" depart="161.89">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh44" type="car" depart="165.88">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh45" type="car" depart="169.50">
+        <route edges="-E0 E2 E5"/>
+    </vehicle>
+    <vehicle id="veh46" type="car" depart="172.34">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh47" type="car" depart="178.44">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh48" type="car" depart="191.44">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+    <vehicle id="veh49" type="car" depart="194.62">
+        <route edges="-E5 -E2 E0"/>
+    </vehicle>
+</routes>

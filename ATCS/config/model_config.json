@@ -1,0 +1,27 @@
+{
+    "metadata": {
+        "title": "ACAC Model Configuration",
+        "version": "1.0.0"
+    },
+    "model": {
+        "num_agents": 2,
+        "macro_obs_dim": 32,
+        "macro_action_dim": 6,
+        "hidden_dim": 128,
+        "time_embed_dim": 32,
+        "attn_dim": 128,
+        "num_heads": 4
+    },
+    "training": {
+        "buffer_size": 10000,
+        "actor_lr": 1e-4,
+        "critic_lr": 1e-4,
+        "gamma": 0.99,
+        "lam": 0.95,
+        "eps_clip": 0.2,
+        "actor_update_mode": "ac",
+        "eps": 1e-6,
+        "vf_coef": 0.5,
+        "ent_coef": 0.01
+    }
+}

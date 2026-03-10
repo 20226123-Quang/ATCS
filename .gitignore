@@ -1,0 +1,35 @@
+# Môi trường ảo (Virtual environments)
+venv/
+env/
+.env/
+.venv/
+env.bak/
+venv.bak/
+
+# File tạm và cache của Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Cấu hình IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.spyderproject
+.spyproject
+
+# File dữ liệu/log có thể sinh ra trong quá trình chạy RL / SUMO
+logs/
+models/
+*.log
+*.zip
+fixed_time_metrics.json
+
+# Cấu hình hệ điều hành
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebook (nếu bạn có dùng để phân tích dữ liệu)
+.ipynb_checkpoints/
