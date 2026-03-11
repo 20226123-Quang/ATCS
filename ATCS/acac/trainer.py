@@ -95,7 +95,6 @@ class ACACTrainer:
     # Rollout
     # =====================================================================
 
-    @torch.no_grad()
     def collect_async_rollout(self, env, max_steps=1000):
         """
         Thu thập rollout bất đồng bộ theo API môi trường mới.
@@ -145,6 +144,7 @@ class ACACTrainer:
                 # Scale sang kự năng có hiệu lực [min_ext, max_ext]
                 env_action = self._scale_action(actor_val, eff_range[0], eff_range[1])
                 action_dict[name] = env_action
+                print(f"action dict: {action_dict}")
 
                 step_entries.append(
                     {
@@ -185,7 +185,6 @@ class ACACTrainer:
     # Evaluation
     # =====================================================================
 
-    @torch.no_grad()
     def evaluate_model(self, env, max_steps=1000):
         """
         Đánh giá model không lưu buffer.

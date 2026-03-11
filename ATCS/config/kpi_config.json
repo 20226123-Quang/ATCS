@@ -14,13 +14,39 @@
     "use_gui": false
   },
   "kpi_formulas": {
-    "average_control_delay_microscopic": "d = Total_Wait_Time / max(1, Total_Vehicles)",
-    "degree_of_saturation": "v/c = V / C_cap",
-    "capacity": "C_cap = s * (g/C) * N",
-    "average_queue_length": "L = Q_avg * S_L",
-    "queue_accumulation": "Q(t) = max(0, Q(t-1) + V_in(t) - V_out(t))",
-    "average_queue_vehicles": "Q_avg = sum_t(Q(t)) / T",
-    "spillback_safety": "L < 0.8 * L_link"
+    "1_degree_of_saturation": {
+      "name": "Mức độ bão hòa (Degree of saturation - g)",
+      "formula": "g = q / (S * f) --- (Công thức F-36 theo TCCS 24:2018/TCĐBVN)",
+      "parameters_calculation": {
+        "q (Lưu lượng thực tế [PCU/h])": "Lấy tổng lượng phương tiện đi vào nhánh (cycle_inflow_pcu) trong khoảng thời gian phân tích, nhân với phần bù thời gian để ra quy mô PCU/h. Trong SUMO (kpi_engine.py), ta có thể lấy tích lũy inflow đếm được ở mỗi bước.",
+        "S (Lưu lượng dòng bão hòa [PCU/h])": "Sử dụng hằng số chuẩn `saturation_flow_pcu_per_hour_per_lane` = 1900 PCU/h/l. Có thể thay đổi theo hướng (rẽ trái/phải, độ dốc, bề rộng mặt đường...).",
+        "f (Tỉ lệ thời gian xanh có hiệu [-])": "Tính bằng (thời_gian_đèn_xanh / thời_gian_chu_kỳ). Ví dụ: `green_seconds / cycle_length`."
+      },
+      "usage_in_reward": "Đưa vào thành phần thứ 3 của hàm phần thưởng: `reward[:, :, 2] = -g`. RL Agent sẽ học cách giảm mức độ bão hòa g về dưới 0.85 để không bị trừ điểm, giúp phân bổ tỉ lệ xanh (f) phù hợp theo lưu lượng (q)."
+    },
+    "2_average_control_delay_wait_time": {
+      "name": "Độ trễ điều khiển / Thời gian trễ (tw)",
+      "formula": "tw = tw1 + tw2 = [tc*(1-f)^2] / [2*(1 - q/S)] + [3600*N_GE] / [f*S] --- (Công thức F-21, F-22, F-23)",
+      "parameters_calculation": {
+        "tw1 (Trễ cơ bản)": "Thời gian trễ phát sinh do phương tiện phải dừng đèn đỏ. Phụ thuộc lớn vào thời gian chu kỳ (tc), tỉ lệ đèn xanh (f) và lưu lượng tới (q). Trong SUMO, tc = `cycle_length_seconds`.",
+        "tw2 (Trễ do tắc nghẽn)": "Phát sinh khi hệ thống bị vượt tải (còn xe chờ sau đèn xanh). Phụ thuộc vào Chiều dài hàng chờ trung bình dư thừa (N_GE).",
+        "tc (Thời gian chu kỳ [s])": "Trong mô phỏng là số giây trong một chu kỳ (tổng các pha đèn).",
+        "N_GE": "Hàng chờ tồn đọng cuối chu kỳ, tính bằng công thức riêng dựa trên g."
+      },
+      "usage_in_reward": "Đưa vào thành phần thứ 1 của hàm phần thưởng: `reward[:, :, 0] = -tw`. Đây là mục tiêu quan trọng nhất. Nếu RL Agent cắt đèn sớm sinh ra xe rớt lại (N_GE > 0), thành phần tw2 sẽ nhảy vọt dẫn đến bị phạt nặng. Từ đó Agent cân bằng chu kỳ tc hợp lý cho mỗi pha."
+    },
+    "3_average_queue_length": {
+      "name": "Chiều dài hàng đợi / Chiều dài hàng chờ trung bình (N_GE)",
+      "formula": "N_GE được nội suy theo Mức độ bão hòa g (HBS 2001). Tại g<=0.65: N_GE=0. Tại g=1.2: N_GE=[m_max*(g-1)*nC + 25 - 20*g]/2 ...",
+      "parameters_calculation": {
+        "g": "Mức độ bão hòa (như đã tính ở trên).",
+        "m_max (Phương tiện lớn nhất thoát ở đèn xanh)": "Tính theo thời gian đèn xanh thực tế `tx` nhân dòng bão hòa `S` chia 3600 (tức là sức chứa tối đa ở pha xanh).",
+        "m_tb (Phương tiện trung bình đến trong 1 chu kỳ)": "Bằng lưu lượng `q` nhân thời gian chu kỳ `tc` chia thời gian quan sát `T`.",
+        "n_C (Số chu kỳ)": "Số chu kỳ trong gian quan sát T (T / tc).",
+        "N_GE": "Chiều dài hàng chờ tính bằng số xe. Với giá trị g trung gian sẽ sử dụng nội suy tuyến tính giữa các điểm mốc g={0.65, 0.9, 1.0, 1.2} để tìm N_GE."
+      },
+      "usage_in_reward": "Đưa vào thành phần thứ 2 của hàm phần thưởng: `reward[:, :, 1] = -N_GE * (chiều_dài_1_xe)`. Khuyến khích RL Agent không để tình trạng kẹt xe tràn (spillback). Nếu N_GE tăng quá nhanh (khi g > 1.0), phần thưởng sẽ giảm rất sâu, ép mô hình phải kéo dài đèn xanh cho luồng đang bị kẹt."
+    }
   },
   "constants": {
     "saturation_flow_pcu_per_hour_per_lane": 1900.0,

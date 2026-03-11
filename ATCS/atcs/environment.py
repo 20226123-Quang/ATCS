@@ -13,7 +13,12 @@ import traci
 
 from .config_loader import KPIConfig, load_kpi_config
 from .kpi_engine import KPIEngine
-from .sumo_parser import ParsedSUMONetwork, TLSProgram, parse_sumo_network, PhaseDefinition
+from .sumo_parser import (
+    ParsedSUMONetwork,
+    TLSProgram,
+    parse_sumo_network,
+    PhaseDefinition,
+)
 
 
 @dataclass
@@ -57,7 +62,9 @@ class TrafficEnvironment:
         self.min_green_seconds = int(sim_cfg.min_green_seconds)
         self.max_green_seconds = int(sim_cfg.max_green_seconds)
         self.cycle_length_seconds = int(sim_cfg.cycle_length_seconds)
-        self.max_extension_seconds = max(self.max_green_seconds - self.min_green_seconds, 0)
+        self.max_extension_seconds = max(
+            self.max_green_seconds - self.min_green_seconds, 0
+        )
         self.use_gui = sim_cfg.use_gui if use_gui is None else bool(use_gui)
         self.max_episode_seconds = (
             int(sim_cfg.max_episode_seconds)
@@ -86,7 +93,7 @@ class TrafficEnvironment:
 
     def _inject_config_plans(self) -> None:
         """
-        Override the environment's TLS programs with the conflict-free phase 
+        Override the environment's TLS programs with the conflict-free phase
         states from kpi_config.json. This ensures it's universally applied.
         """
         plans_dict = self.kpi_config.fixed_time_plans
@@ -96,39 +103,43 @@ class TrafficEnvironment:
         for tls_id, plan in plans_dict.items():
             if tls_id not in self.tls_programs:
                 continue
-                
+
             phases = []
             for idx, state in enumerate(plan):
                 has_green = any(c in state for c in "Gg")
                 has_yellow = any(c in state for c in "Yy")
-                
+
                 if has_green and not has_yellow:
-                    phase_type = 'green'
-                    duration = 0  # Green phases trigger immediately for explicit actions
+                    phase_type = "green"
+                    duration = (
+                        0  # Green phases trigger immediately for explicit actions
+                    )
                 elif has_yellow:
-                    phase_type = 'yellow'
+                    phase_type = "yellow"
                     duration = self.kpi_config.simulation.yellow_fallback_seconds
                 else:
-                    phase_type = 'red'
-                    duration = 0 # Default fallback
-                    
+                    phase_type = "red"
+                    duration = 0  # Default fallback
+
                 phases.append(
                     PhaseDefinition(
                         index=idx,
                         duration_seconds=int(duration),
                         state=state,
-                        phase_type=phase_type
+                        phase_type=phase_type,
                     )
                 )
-                
-            first_green_index = next((p.index for p in phases if p.phase_type == "green"), 0)
+
+            first_green_index = next(
+                (p.index for p in phases if p.phase_type == "green"), 0
+            )
             base_cycle_seconds = self.cycle_length_seconds
-            
+
             self.tls_programs[tls_id] = TLSProgram(
                 tls_id=tls_id,
                 phases=tuple(phases),
                 base_cycle_seconds=base_cycle_seconds,
-                first_green_index=first_green_index
+                first_green_index=first_green_index,
             )
 
     def _resolve_sumo_binary(self, use_gui: bool) -> str:
@@ -273,7 +284,9 @@ class TrafficEnvironment:
                 for idx in link_indices
             )
             if lane_has_green:
-                self.kpi_engine.mark_lane_green_seconds(lane_id, self.step_length_seconds)
+                self.kpi_engine.mark_lane_green_seconds(
+                    lane_id, self.step_length_seconds
+                )
 
     def _snapshot_green_end_queues(self, tls_id: str, phase_state: str) -> None:
         """Snapshot current queue for all lanes that were green.
@@ -333,10 +346,10 @@ class TrafficEnvironment:
             runtime.decision_pending = False
             if extension_seconds > 0:
                 runtime.remaining_phase_seconds += extension_seconds
-                # NOTE: cycle_length_seconds is NOT modified here because
-                # the cycle is fixed by config (cycle_length_seconds in kpi_config.json).
-                # The RL agent only extends the current green phase,
-                # but the total cycle boundary stays at the configured value.
+                # TCCS 24:2018 (HBS 2001) logic: When the agent extends the green time,
+                # the total cycle length (tc) MUST grow. This correctly causes the delay formula
+                # (tw1 = tc * ... ) to punish the OTHER lanes waiting for this extension.
+                runtime.cycle_length_seconds += extension_seconds
 
             if runtime.remaining_phase_seconds <= 0:
                 self._advance_to_next_phase(tls_id)
@@ -382,7 +395,7 @@ class TrafficEnvironment:
         except Exception:
             return True
 
-    def _build_observation_reward(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _build_observation_reward(self, delta_t: int) -> Tuple[np.ndarray, np.ndarray]:
         obs = np.zeros((len(self.tls_ids), self.max_lanes, 5), dtype=np.float32)
         reward = np.zeros((len(self.tls_ids), self.max_lanes, 3), dtype=np.float32)
 
@@ -399,13 +412,38 @@ class TrafficEnvironment:
                     lane_id,
                     cycle_length_seconds=float(runtime.cycle_length_seconds),
                 )
+
+                # Observation uses the standard metrics
                 obs[tls_index, lane_index, 0] = lane_kpi.control_delay_seconds
                 obs[tls_index, lane_index, 1] = lane_kpi.degree_of_saturation
                 obs[tls_index, lane_index, 2] = lane_kpi.queue_length_meters
                 obs[tls_index, lane_index, 3] = remaining_cycle
                 obs[tls_index, lane_index, 4] = current_phase
 
-                reward[tls_index, lane_index, 0] = -lane_kpi.control_delay_seconds
+                # Reward is scaled by the actual flow to penalize delay *on vehicles*
+                # An empty lane (inflow=0 and queue=0) MUST have 0 delay penalty.
+                lane_stats = self.kpi_engine.get_lane_stats(lane_id)
+                vehicle_volume = max(
+                    lane_stats.cycle_inflow_pcu + lane_stats.initial_cycle_queue, 0.0
+                )
+
+                # Weight the Control Delay by the volume: Total Delay (vehicle-seconds)
+                # Cap the volume multiplier to avoid exploding gradients if traffic is massive
+                volume_weight = min(vehicle_volume, 100.0)
+
+                # Ensure we have a valid time fraction so that delay is normalized
+                # across multiple decision steps. If an agent causes 5 decisions in 1 cycle
+                # the sum of (delta_t / cycle_length) will be 1, so the delay is counted once.
+                time_fraction = delta_t / max(runtime.cycle_length_seconds, 1.0)
+
+                # If volume_weight is 0, the penalty is correctly 0.
+                reward[tls_index, lane_index, 0] = (
+                    -lane_kpi.control_delay_seconds * volume_weight * time_fraction
+                )
+
+                # Queue length and saturation are already 0 when volume is 0,
+                # but we can also multiply them by a factor if we want.
+                # According to standard, just taking the negative is fine for them.
                 reward[tls_index, lane_index, 1] = -lane_kpi.queue_length_meters
                 reward[tls_index, lane_index, 2] = -lane_kpi.degree_of_saturation
 
@@ -419,10 +457,7 @@ class TrafficEnvironment:
         program = self.tls_programs[tls_id]
 
         # Thời gian còn lại trong chu kỳ (tính từ LÚC BẮT ĐẦU pha xanh hiện tại)
-        t_remain = float(
-            runtime.cycle_length_seconds
-            - runtime.cycle_elapsed_seconds
-        )
+        t_remain = float(runtime.cycle_length_seconds - runtime.cycle_elapsed_seconds)
 
         # Thống kê các pha SAU pha hiện tại
         phases_after = program.phases[runtime.current_phase_index + 1 :]
@@ -442,13 +477,16 @@ class TrafficEnvironment:
             - float(remain_phase * self.max_green_seconds + total_yellow_after),
         )
 
-        print(f"Remain phase: {remain_phase}, total yellow after: {total_yellow_after}, t_remain: {t_remain}, min_x: {min_x}, max_x: {max_x}")
+        print(
+            f"Remain phase: {remain_phase}, total yellow after: {total_yellow_after}, t_remain: {t_remain}, min_x: {min_x}, max_x: {max_x}"
+        )
 
         return min_x, max_x
 
     def _build_info(self, delta_t: int) -> Dict[str, object]:
         cycle_length_map = {
-            tls_id: self.tls_runtime[tls_id].cycle_length_seconds for tls_id in self.tls_ids
+            tls_id: self.tls_runtime[tls_id].cycle_length_seconds
+            for tls_id in self.tls_ids
         }
         cycle_length_value: object = cycle_length_map
         if len(cycle_length_map) == 1:
@@ -457,23 +495,28 @@ class TrafficEnvironment:
         # Determine which lanes are green for the intersections that require action
         controllable_lanes = {}
         remaining_cycle_info = {}
-        
+
         for tls_id in self.tls_ids:
             runtime = self.tls_runtime[tls_id]
-            remaining = max(0, runtime.cycle_length_seconds - runtime.cycle_elapsed_seconds)
+            remaining = max(
+                0, runtime.cycle_length_seconds - runtime.cycle_elapsed_seconds
+            )
             remaining_cycle_info[tls_id] = remaining
 
         for tls_id in self.required_action:
             runtime = self.tls_runtime[tls_id]
             program = self.tls_programs[tls_id]
             phase = program.phases[runtime.current_phase_index]
-            
+
             if phase.phase_type == "green":
                 green_lanes = set()
                 lane_index_map = self.lane_link_indices.get(tls_id, {})
                 for lane_id, link_indices in lane_index_map.items():
                     # If any of the links for this lane have a 'G' or 'g' in the state
-                    if any(idx < len(phase.state) and phase.state[idx] in ("G", "g") for idx in link_indices):
+                    if any(
+                        idx < len(phase.state) and phase.state[idx] in ("G", "g")
+                        for idx in link_indices
+                    ):
                         green_lanes.add(lane_id)
                 if green_lanes:
                     controllable_lanes[tls_id] = sorted(list(green_lanes))
@@ -511,24 +554,28 @@ class TrafficEnvironment:
         self._prepare_tls_runtime()
         self.done = self._check_done()
 
-        observation, reward = self._build_observation_reward()
+        observation, reward = self._build_observation_reward(delta_t=0)
         info = self._build_info(delta_t=0)
         return observation, reward, self.done, info
 
-    def step(self, action: Dict[str, float]) -> Tuple[np.ndarray, np.ndarray, bool, Dict[str, object]]:
+    def step(
+        self, action: Dict[str, float]
+    ) -> Tuple[np.ndarray, np.ndarray, bool, Dict[str, object]]:
         self._ensure_connection()
         if not isinstance(action, dict):
-            raise TypeError("action must be a dict: {intersection_id: green_extension_seconds}")
+            raise TypeError(
+                "action must be a dict: {intersection_id: green_extension_seconds}"
+            )
 
         if self.done:
-            observation, reward = self._build_observation_reward()
+            observation, reward = self._build_observation_reward(delta_t=0)
             return observation, reward, True, self._build_info(delta_t=0)
 
         self._apply_pending_actions(action)
         delta_t = self._simulate_until_need_action()
         self.done = self.done or self._check_done()
 
-        observation, reward = self._build_observation_reward()
+        observation, reward = self._build_observation_reward(delta_t=delta_t)
         info = self._build_info(delta_t=delta_t)
         return observation, reward, self.done, info
 

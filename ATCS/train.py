@@ -116,7 +116,7 @@ def main() -> None:
         "--sumocfg", default=default_cfg, help="Path to SUMO .sumocfg file"
     )
     parser.add_argument(
-        "--episodes", type=int, default=1500, help="Number of training episodes"
+        "--episodes", type=int, default=10000, help="Number of training episodes"
     )
     parser.add_argument(
         "--steps", type=int, default=600, help="Number of decision steps per episode"
