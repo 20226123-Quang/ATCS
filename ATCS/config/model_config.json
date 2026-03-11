@@ -14,8 +14,8 @@
     },
     "training": {
         "buffer_size": 10000,
-        "actor_lr": 1e-4,
-        "critic_lr": 1e-4,
+        "actor_lr": 1e-6,
+        "critic_lr": 1e-6,
         "gamma": 0.99,
         "lam": 0.95,
         "eps_clip": 0.2,
