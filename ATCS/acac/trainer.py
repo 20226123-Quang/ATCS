@@ -82,7 +82,7 @@ class ACACTrainer:
 	def _global_reward_scalar(self, reward):
 		# Return the mean reward across all agents and lanes.
 		# Note: The environment should now return negative costs (e.g., -delay).
-		return float(reward[:, :, 0].mean())
+		return float(reward[:, :, 1].mean())
 
 	def _scale_action(self, actor_output, min_ext, max_ext):
 		"""
