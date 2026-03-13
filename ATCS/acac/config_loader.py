@@ -29,8 +29,11 @@ class TrainingSettings:
     lam: float
     eps_clip: float
     eps: float
-    vf_coef: float   # c1: value function loss coefficient
+    vf_coef: float  # c1: value function loss coefficient
     ent_coef: float  # c2: entropy bonus coefficient
+    reward_delay_weight: float
+    reward_queue_weight: float
+    reward_saturation_weight: float
 
 
 @dataclass(frozen=True)
@@ -76,6 +79,9 @@ def load_model_config(config_path: Optional[str] = None) -> ModelConfig:
         eps=float(t.get("eps", 1e-6)),
         vf_coef=float(t.get("vf_coef", 0.5)),
         ent_coef=float(t.get("ent_coef", 0.01)),
+        reward_delay_weight=float(t.get("reward_delay_weight", 1.0)),
+        reward_queue_weight=float(t.get("reward_queue_weight", 0.2)),
+        reward_saturation_weight=float(t.get("reward_saturation_weight", 0.1)),
     )
 
     return ModelConfig(path=path, model=model, training=training)

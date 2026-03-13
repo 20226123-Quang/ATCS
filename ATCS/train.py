@@ -142,6 +142,7 @@ def main() -> None:
     log_file = checkpoint_dir / f"{scenario_name}_training_log.csv"
     model_file = checkpoint_dir / f"{scenario_name}_checkpoint.pt"
     plot_file = checkpoint_dir / f"{scenario_name}_reward_plot.png"
+    latest_model_file = model_file
 
     # Khởi tạo file log CSV và viết header nếu chưa có
     if not log_file.exists():
@@ -238,9 +239,9 @@ def main() -> None:
         plt.close()
 
         # Lưu checkpoint đè lên chính nó (cập nhật mới nhất) mỗi episode
-        trainer.save_model(str(model_file))
+        latest_model_file = Path(trainer.save_model(str(model_file)))
 
-    print(f"\nTraining complete. Model saved to {model_file}")
+    print(f"\nTraining complete. Model saved to {latest_model_file}")
     env.close()
 
     # ---- Auto-evaluate với GUI sau khi training xong ----
@@ -253,7 +254,7 @@ def main() -> None:
             "--sumocfg",
             args.sumocfg,
             "--checkpoint",
-            str(model_file),
+            str(latest_model_file),
             "--steps",
             str(args.steps),
         ],

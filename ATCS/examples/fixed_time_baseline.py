@@ -43,7 +43,7 @@ def main() -> None:
 
     while not done:
         required_intersections = info.get("intersection_require_action", [])
-        action = {tls_id: 30 for tls_id in required_intersections}
+        action = {tls_id: 45 for tls_id in required_intersections}
         obs, reward, done, info = env.step(action)
         step_count += 1
 

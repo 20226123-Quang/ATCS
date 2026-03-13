@@ -93,7 +93,7 @@ def run_acac_episode(env, trainer, max_steps):
             i = trainer.tls_index[name]
             z_it = trainer._obs_to_tensor(obs, i).unsqueeze(0)
             eff_range = info.get("effective_action_range", {}).get(
-                name, (info["min_green"], info["max_green"])
+                name, (0.0, info["max_green"] - info["min_green"])
             )
             z_it = torch.cat(
                 [

@@ -89,6 +89,7 @@ def print_metrics(metrics: dict) -> None:
 	print(f"  Avg Reward/step  : {metrics['avg_reward']:.6f}")
 	print(f"  Avg Delay        : {metrics['delay']:.4f} s")
 	print(f"  Avg Queue Length : {metrics['queue']:.4f} m")
+	print(f"  Avg Sat (norm)   : {metrics.get('saturation_norm', 0.0):.4f}")
 	print("=" * 50 + "\n")
 
 

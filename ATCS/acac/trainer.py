@@ -1,5 +1,8 @@
 """ACAC Trainer: rollout collection, advantage computation, actor/critic updates."""
 
+import os
+import time
+
 import torch
 import torch.nn.functional as F
 from .config_loader import load_model_config
@@ -85,9 +88,9 @@ class ACACTrainer:
 
     def _scale_action(self, actor_output, min_ext, max_ext):
         """
-        Scale actor output từ [0, 1] sang [min_ext, max_ext].
+        Scale actor output từ [0, 1] sang extension range [e_min, e_max].
         actor_output : float trong [0, 1] (output của MacroActor với min_action=0, max_action=1)
-        Returns: float extension seconds trong [min_ext, max_ext]
+        Returns: float extension seconds trong [e_min, e_max]
         """
         return float(min_ext + actor_output * (max_ext - min_ext))
 
@@ -116,7 +119,7 @@ class ACACTrainer:
                 # Encode quan sát mới
                 z_it = self._obs_to_tensor(obs, i).unsqueeze(0)  # [1, obs_dim]
                 eff_range = info.get("effective_action_range", {}).get(
-                    name, (info["min_green"], info["max_green"])
+                    name, (0.0, info["max_green"] - info["min_green"])
                 )
                 z_it = torch.cat(
                     [
@@ -141,7 +144,7 @@ class ACACTrainer:
                 old_log_prob = old_log_prob.squeeze(0)
                 actor_val = float(actor_out.detach().item())  # [0, 1]
 
-                # Scale sang kự năng có hiệu lực [min_ext, max_ext]
+                # Scale sang extension range hợp lệ [e_min, e_max]
                 env_action = self._scale_action(actor_val, eff_range[0], eff_range[1])
                 action_dict[name] = env_action
                 print(f"action dict: {action_dict}")
@@ -205,7 +208,7 @@ class ACACTrainer:
                 i = self.tls_index[name]
                 z_it = self._obs_to_tensor(obs, i).unsqueeze(0)
                 eff_range = info.get("effective_action_range", {}).get(
-                    name, (info["min_green"], info["max_green"])
+                    name, (0.0, info["max_green"] - info["min_green"])
                 )
                 z_it = torch.cat(
                     [
@@ -482,7 +485,7 @@ class ACACTrainer:
     # Persistence
     # =====================================================================
 
-    def save_model(self, path):
+    def save_model(self, path, retries=5, retry_delay=0.2):
         state = {
             "agents": [
                 {
@@ -496,7 +499,26 @@ class ACACTrainer:
                 "combined": self.optimizers["combined"].state_dict(),
             },
         }
-        torch.save(state, path)
+
+        last_error = None
+        for attempt in range(retries):
+            try:
+                torch.save(state, path)
+                return path
+            except RuntimeError as err:
+                last_error = err
+                if "error code: 1224" not in str(err):
+                    raise
+                time.sleep(retry_delay * (attempt + 1))
+
+        base, ext = os.path.splitext(path)
+        fallback_path = f"{base}_{int(time.time())}{ext}"
+        torch.save(state, fallback_path)
+        print(
+            f"[checkpoint] File lock on {path}. Saved fallback checkpoint to {fallback_path}. "
+            f"Original error: {last_error}"
+        )
+        return fallback_path
 
     def load_model(self, path):
         state = torch.load(path, map_location=self.device)

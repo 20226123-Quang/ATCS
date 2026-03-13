@@ -7,10 +7,10 @@
   "simulation": {
     "default_step_length_seconds": 1,
     "max_episode_seconds": 3600,
-    "min_green_seconds": 10,
-    "max_green_seconds": 60,
+    "min_green_seconds": 15,
+    "max_green_seconds": 90,
     "yellow_fallback_seconds": 3,
-    "cycle_length_seconds": 132,
+    "cycle_length_seconds": 192,
     "use_gui": false
   },
   "kpi_formulas": {
@@ -119,7 +119,17 @@
       "grrgyrgrrgyr",
       "grrgrGgrrgrG",
       "grrgrygrrgry",
-      "gGrgrrgGrgrr",
+      "gGrgrrGgrgrr",
+      "gyrgrrgyrgrr",
+      "grGgrrgrGgrr",
+      "grygrrgrygrr"
+    ],
+    "J2": [
+      "grrgGrgrrgGr",
+      "grrgyrgrrgyr",
+      "grrgrGgrrgrG",
+      "grrgrygrrgry",
+      "gGrgrrGgrgrr",
       "gyrgrrgyrgrr",
       "grGgrrgrGgrr",
       "grygrrgrygrr"
@@ -129,7 +139,17 @@
       "grrgyrgrrgyr",
       "grrgrGgrrgrG",
       "grrgrygrrgry",
-      "gGrgrrgGrgrr",
+      "gGrgrrGgrgrr",
+      "gyrgrrgyrgrr",
+      "grGgrrgrGgrr",
+      "grygrrgrygrr"
+    ],
+    "J5": [
+      "grrgGrgrrgGr",
+      "grrgyrgrrgyr",
+      "grrgrGgrrgrG",
+      "grrgrygrrgry",
+      "gGrgrrGgrgrr",
       "gyrgrrgyrgrr",
       "grGgrrgrGgrr",
       "grygrrgrygrr"

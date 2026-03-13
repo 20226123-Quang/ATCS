@@ -1,0 +1,11 @@
+gym
+gymnasium
+imageio
+matplotlib
+numpy
+pandas
+psutil
+scipy
+stable-baselines3
+torch
+traci

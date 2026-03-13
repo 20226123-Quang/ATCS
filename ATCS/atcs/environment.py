@@ -339,17 +339,20 @@ class TrafficEnvironment:
 
         for tls_id in pending_tls_ids:
             runtime = self.tls_runtime[tls_id]
-            extension = float(action.get(tls_id, 0.0))
-            extension = min(max(extension, 0.0), float(self.max_extension_seconds))
-            extension_seconds = int(round(extension))
+            extension_raw = float(action.get(tls_id, 0.0))
+            min_ext, max_ext = self._compute_effective_green_range(tls_id)
+            extension = min(max(extension_raw, min_ext), max_ext)
 
             runtime.decision_pending = False
-            if extension_seconds > 0:
-                runtime.remaining_phase_seconds += extension_seconds
-                # TCCS 24:2018 (HBS 2001) logic: When the agent extends the green time,
-                # the total cycle length (tc) MUST grow. This correctly causes the delay formula
-                # (tw1 = tc * ... ) to punish the OTHER lanes waiting for this extension.
-                runtime.cycle_length_seconds += extension_seconds
+
+            # Action semantics:
+            # - Agent predicts continuous extension e (seconds).
+            # - Effective range is [e_min, e_max].
+            # - Executed green is absolute x = base_green + e.
+            # - Cycle length stays fixed (no cycle_length_seconds += extension).
+            base_green = float(self.min_green_seconds)
+            green_seconds = int(round(base_green + extension))
+            runtime.remaining_phase_seconds = max(green_seconds, 0)
 
             if runtime.remaining_phase_seconds <= 0:
                 self._advance_to_next_phase(tls_id)
@@ -451,37 +454,55 @@ class TrafficEnvironment:
 
     def _compute_effective_green_range(self, tls_id: str) -> Tuple[float, float]:
         """
-        Tính khoảng thời gian đèn xanh [min_x, max_x] hợp lệ cho pha hiện tại.
+        Tính khoảng extension hợp lệ [e_min, e_max] cho pha xanh hiện tại.
+
+        Quy ước action:
+        - Agent dự đoán extension e (giây).
+        - Thời gian xanh thực thi là x = base_green + e.
+        - base_green mặc định = min_green_seconds.
+        - Chu kỳ là cố định, nên e phải đảm bảo phần còn lại của cycle vẫn khả thi.
         """
         runtime = self.tls_runtime[tls_id]
         program = self.tls_programs[tls_id]
+        base_green = float(self.min_green_seconds)
+        max_green = float(self.max_green_seconds)
 
-        # Thời gian còn lại trong chu kỳ (tính từ LÚC BẮT ĐẦU pha xanh hiện tại)
+        # Thời gian còn lại trong chu kỳ tại lúc cần quyết định cho pha hiện tại.
         t_remain = float(runtime.cycle_length_seconds - runtime.cycle_elapsed_seconds)
 
-        # Thống kê các pha SAU pha hiện tại
+        # Các pha SAU pha hiện tại.
         phases_after = program.phases[runtime.current_phase_index + 1 :]
-        remain_phase = sum(1 for p in phases_after if p.phase_type == "green")
-        total_yellow_after = sum(
+        remaining_green_count = sum(1 for p in phases_after if p.phase_type == "green")
+        total_non_green_after = sum(
             p.duration_seconds for p in phases_after if p.phase_type != "green"
         )
 
-        max_x = min(
-            float(self.max_green_seconds),
-            t_remain
-            - float(remain_phase * self.min_green_seconds + total_yellow_after),
-        )
-        min_x = max(
-            float(self.min_green_seconds),
-            t_remain
-            - float(remain_phase * self.max_green_seconds + total_yellow_after),
-        )
+        # Future minimal/maximal time demand (excluding current green).
+        future_min = float(remaining_green_count) * base_green + total_non_green_after
+        future_max = float(remaining_green_count) * max_green + total_non_green_after
+
+        # Feasible absolute green range for current phase.
+        min_x = max(base_green, t_remain - future_max)
+        max_x = min(max_green, t_remain - future_min)
+
+        if min_x > max_x:
+            # Defensive fallback for degenerate timing states:
+            # collapse to the closest feasible absolute green inside [base_green, max_green].
+            x_safe = min(max(t_remain - future_min, base_green), max_green)
+            min_x = x_safe
+            max_x = x_safe
+
+        min_ext = max(0.0, min_x - base_green)
+        max_ext = min(float(self.max_extension_seconds), max_x - base_green)
+        if min_ext > max_ext:
+            min_ext = max_ext
 
         print(
-            f"Remain phase: {remain_phase}, total yellow after: {total_yellow_after}, t_remain: {t_remain}, min_x: {min_x}, max_x: {max_x}"
+            f"Remain phase: {remaining_green_count}, total yellow after: {total_non_green_after}, "
+            f"t_remain: {t_remain}, min_e: {min_ext}, max_e: {max_ext}"
         )
 
-        return min_x, max_x
+        return min_ext, max_ext
 
     def _build_info(self, delta_t: int) -> Dict[str, object]:
         cycle_length_map = {
