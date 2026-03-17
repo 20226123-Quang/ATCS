@@ -125,6 +125,12 @@ def main() -> None:
     parser.add_argument(
         "--device", type=str, default="cpu", help="Device to run on (cpu, cuda, mps)"
     )
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default="",
+        help="Optional path to checkpoint (.pt) to continue/fine-tune training",
+    )
     args = parser.parse_args()
 
     # ---- Setup Logging & Checkpoint Directories ----
@@ -144,20 +150,19 @@ def main() -> None:
     plot_file = checkpoint_dir / f"{scenario_name}_reward_plot.png"
     latest_model_file = model_file
 
-    # Khởi tạo file log CSV và viết header nếu chưa có
-    if not log_file.exists():
-        with open(log_file, mode="w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(
-                [
-                    "Episode",
-                    "Reward",
-                    "Critic_Loss",
-                    "Time_Sec",
-                    "CPU_Percent",
-                    "RAM_Percent",
-                ]
-            )
+    # Mỗi lần chạy train mới: reset CSV để không trộn nhiều run vào cùng log.
+    with open(log_file, mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(
+            [
+                "Episode",
+                "Reward",
+                "Critic_Loss",
+                "Time_Sec",
+                "CPU_Percent",
+                "RAM_Percent",
+            ]
+        )
 
     print(f"[{scenario_name}] Output directory: {checkpoint_dir}")
 
@@ -189,6 +194,14 @@ def main() -> None:
         lam=_cfg.training.lam,
         eps_clip=_cfg.training.eps_clip,
     )
+
+    if args.checkpoint:
+        ckpt_path = Path(args.checkpoint)
+        if not ckpt_path.exists():
+            raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
+        print(f"Loading checkpoint for continued training: {ckpt_path}")
+        trainer.load_model(str(ckpt_path))
+        print("Checkpoint loaded successfully.")
 
     import matplotlib.pyplot as plt
     import subprocess

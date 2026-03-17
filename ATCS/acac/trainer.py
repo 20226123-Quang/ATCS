@@ -54,6 +54,8 @@ class ACACTrainer:
         self.eps_clip = eps_clip
         self.vf_coef = _cfg.training.vf_coef  # c1: value function coefficient
         self.ent_coef = _cfg.training.ent_coef  # c2: entropy bonus coefficient
+        self.reward_delay_weight = _cfg.training.reward_delay_weight
+        self.reward_queue_weight = _cfg.training.reward_queue_weight
         self.device = device
 
         # ===== Book-keeping =====
@@ -82,9 +84,19 @@ class ACACTrainer:
         )
 
     def _global_reward_scalar(self, reward):
-        # Return the mean reward across all agents and lanes.
-        # Note: The environment should now return negative costs (e.g., -delay).
-        return float(reward[:, :, 0].mean())
+        # reward[:, :, 0] = -wait/delay, reward[:, :, 1] = -queue length
+        delay_term = float(reward[:, :, 0].mean())
+        queue_term = float(reward[:, :, 1].mean())
+
+        weight_sum = abs(self.reward_delay_weight) + abs(self.reward_queue_weight)
+        if weight_sum <= 1e-8:
+            return float(delay_term + queue_term)
+
+        weighted = (
+            self.reward_delay_weight * delay_term
+            + self.reward_queue_weight * queue_term
+        )
+        return float(weighted / weight_sum)
 
     def _scale_action(self, actor_output, min_ext, max_ext):
         """
