@@ -106,10 +106,11 @@
     }
   ],
   "reward_design": {
-    "shape": "[n_intersections, n_lanes, 2]",
+    "shape": "[n_intersections, n_lanes, 3]",
     "components": [
       "average_control_delay_sec_per_vehicle",
-      "average_queue_length_meter"
+      "average_queue_length_meter",
+      "degree_of_saturation"
     ],
     "note": "Lower is better. Apply optimization externally or convert to negative scalar in trainer."
   },

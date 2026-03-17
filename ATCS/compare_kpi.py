@@ -1,4 +1,4 @@
-"""Compare RL (ACAC) vs Fixed-Time on 3 KPIs with normalized saturation."""
+"""Compare RL (ACAC) vs Fixed-Time on network, node, lane, and fairness KPIs."""
 
 import argparse
 import csv
@@ -22,6 +22,7 @@ from acac import (
 from atcs.environment import TrafficEnvironment
 
 _cfg = load_model_config()
+_EPS = 1e-8
 
 
 def initialize_acac(obs_dim, action_dim, min_action, max_action, tls_names, device="cpu"):
@@ -78,19 +79,231 @@ def _normalize_saturation(sat_raw: float, sat_clip_max: float) -> float:
     return sat_clipped / sat_clip_max
 
 
+def _mean_or_nan(values):
+    return float(np.mean(values)) if values else float("nan")
+
+
+def _std_or_zero(values):
+    return float(np.std(values)) if values else 0.0
+
+
+def _spread_or_zero(values):
+    return float(max(values) - min(values)) if values else 0.0
+
+
+def _spread_ratio(values):
+    if not values:
+        return 0.0
+    mean_val = float(np.mean(values))
+    return float(_spread_or_zero(values) / max(abs(mean_val), _EPS))
+
+
+def _jain_service_fairness(lower_is_better_values):
+    if not lower_is_better_values:
+        return float("nan")
+    service = np.array(
+        [1.0 / (1.0 + max(float(v), 0.0)) for v in lower_is_better_values],
+        dtype=np.float64,
+    )
+    denom = float(np.square(service).sum())
+    if denom <= _EPS:
+        return float("nan")
+    return float((service.sum() ** 2) / (len(service) * denom))
+
+
+def _improvement_pct(lower_is_better_rl: float, lower_is_better_fixed: float) -> float:
+    if abs(lower_is_better_fixed) < 1e-12:
+        return float("nan")
+    return (lower_is_better_fixed - lower_is_better_rl) / abs(lower_is_better_fixed) * 100.0
+
+
+def _empty_episode_stats(env):
+    return {
+        "network": {
+            "delay": [],
+            "queue": [],
+            "saturation_raw": [],
+            "saturation_norm": [],
+        },
+        "node": {
+            tls_id: {
+                "delay": [],
+                "queue": [],
+                "saturation_raw": [],
+                "saturation_norm": [],
+            }
+            for tls_id in env.tls_ids
+        },
+        "lane": {
+            (tls_id, lane_id): {
+                "delay": [],
+                "queue": [],
+                "saturation_raw": [],
+                "saturation_norm": [],
+            }
+            for tls_id in env.tls_ids
+            for lane_id in env.lanes_by_tls.get(tls_id, [])
+        },
+    }
+
+
+def _record_snapshot(stats, env, obs, sat_clip_max):
+    lane_delays = []
+    lane_queues = []
+    lane_sat_raws = []
+    lane_sat_norms = []
+
+    for tls_index, tls_id in enumerate(env.tls_ids):
+        tls_delay = []
+        tls_queue = []
+        tls_sat_raw = []
+        tls_sat_norm = []
+
+        for lane_index, lane_id in enumerate(env.lanes_by_tls.get(tls_id, [])):
+            delay = float(obs[tls_index, lane_index, 0])
+            sat_raw = float(obs[tls_index, lane_index, 1])
+            queue = float(obs[tls_index, lane_index, 2])
+            sat_norm = _normalize_saturation(sat_raw, sat_clip_max)
+
+            stats["lane"][(tls_id, lane_id)]["delay"].append(delay)
+            stats["lane"][(tls_id, lane_id)]["queue"].append(queue)
+            stats["lane"][(tls_id, lane_id)]["saturation_raw"].append(sat_raw)
+            stats["lane"][(tls_id, lane_id)]["saturation_norm"].append(sat_norm)
+
+            tls_delay.append(delay)
+            tls_queue.append(queue)
+            tls_sat_raw.append(sat_raw)
+            tls_sat_norm.append(sat_norm)
+
+            lane_delays.append(delay)
+            lane_queues.append(queue)
+            lane_sat_raws.append(sat_raw)
+            lane_sat_norms.append(sat_norm)
+
+        stats["node"][tls_id]["delay"].append(_mean_or_nan(tls_delay))
+        stats["node"][tls_id]["queue"].append(_mean_or_nan(tls_queue))
+        stats["node"][tls_id]["saturation_raw"].append(_mean_or_nan(tls_sat_raw))
+        stats["node"][tls_id]["saturation_norm"].append(_mean_or_nan(tls_sat_norm))
+
+    stats["network"]["delay"].append(_mean_or_nan(lane_delays))
+    stats["network"]["queue"].append(_mean_or_nan(lane_queues))
+    stats["network"]["saturation_raw"].append(_mean_or_nan(lane_sat_raws))
+    stats["network"]["saturation_norm"].append(_mean_or_nan(lane_sat_norms))
+
+
+def _lane_rows_from_stats(stats, scenario_name, controller_name):
+    rows = []
+    for (tls_id, lane_id), metric_map in sorted(stats["lane"].items()):
+        rows.append(
+            {
+                "scenario": scenario_name,
+                "controller": controller_name,
+                "tls_id": tls_id,
+                "lane_id": lane_id,
+                "delay": _mean_or_nan(metric_map["delay"]),
+                "queue": _mean_or_nan(metric_map["queue"]),
+                "saturation_raw": _mean_or_nan(metric_map["saturation_raw"]),
+                "saturation_norm": _mean_or_nan(metric_map["saturation_norm"]),
+            }
+        )
+    return rows
+
+
+def _node_rows_from_lane_rows(lane_rows, scenario_name, controller_name):
+    grouped = {}
+    for row in lane_rows:
+        grouped.setdefault(row["tls_id"], []).append(row)
+
+    rows = []
+    for tls_id, entries in sorted(grouped.items()):
+        delay_vals = [float(r["delay"]) for r in entries]
+        queue_vals = [float(r["queue"]) for r in entries]
+        sat_vals = [float(r["saturation_norm"]) for r in entries]
+
+        delay_spread_ratio = _spread_ratio(delay_vals)
+        queue_spread_ratio = _spread_ratio(queue_vals)
+        sat_spread_ratio = _spread_ratio(sat_vals)
+
+        rows.append(
+            {
+                "scenario": scenario_name,
+                "controller": controller_name,
+                "tls_id": tls_id,
+                "lane_count": len(entries),
+                "delay_mean": _mean_or_nan(delay_vals),
+                "queue_mean": _mean_or_nan(queue_vals),
+                "saturation_norm_mean": _mean_or_nan(sat_vals),
+                "delay_spread": _spread_or_zero(delay_vals),
+                "queue_spread": _spread_or_zero(queue_vals),
+                "saturation_norm_spread": _spread_or_zero(sat_vals),
+                "delay_std": _std_or_zero(delay_vals),
+                "queue_std": _std_or_zero(queue_vals),
+                "saturation_norm_std": _std_or_zero(sat_vals),
+                "delay_spread_ratio": delay_spread_ratio,
+                "queue_spread_ratio": queue_spread_ratio,
+                "saturation_norm_spread_ratio": sat_spread_ratio,
+                "delay_jain_fairness": _jain_service_fairness(delay_vals),
+                "queue_jain_fairness": _jain_service_fairness(queue_vals),
+                "saturation_norm_jain_fairness": _jain_service_fairness(sat_vals),
+                "directional_imbalance": float(
+                    np.mean([delay_spread_ratio, queue_spread_ratio, sat_spread_ratio])
+                ),
+            }
+        )
+    return rows
+
+
+def _summarize_episode(stats, scenario_name, controller_name):
+    lane_rows = _lane_rows_from_stats(stats, scenario_name, controller_name)
+    node_rows = _node_rows_from_lane_rows(lane_rows, scenario_name, controller_name)
+
+    delay_vals = [float(r["delay"]) for r in lane_rows]
+    queue_vals = [float(r["queue"]) for r in lane_rows]
+    sat_raw_vals = [float(r["saturation_raw"]) for r in lane_rows]
+    sat_norm_vals = [float(r["saturation_norm"]) for r in lane_rows]
+
+    delay_spread_ratio = _spread_ratio(delay_vals)
+    queue_spread_ratio = _spread_ratio(queue_vals)
+    sat_spread_ratio = _spread_ratio(sat_norm_vals)
+
+    network_summary = {
+        "scenario": scenario_name,
+        "controller": controller_name,
+        "delay": _mean_or_nan(stats["network"]["delay"]),
+        "queue": _mean_or_nan(stats["network"]["queue"]),
+        "saturation_raw": _mean_or_nan(stats["network"]["saturation_raw"]),
+        "saturation_norm": _mean_or_nan(stats["network"]["saturation_norm"]),
+        "delay_spread": _spread_or_zero(delay_vals),
+        "queue_spread": _spread_or_zero(queue_vals),
+        "saturation_norm_spread": _spread_or_zero(sat_norm_vals),
+        "delay_std": _std_or_zero(delay_vals),
+        "queue_std": _std_or_zero(queue_vals),
+        "saturation_norm_std": _std_or_zero(sat_norm_vals),
+        "delay_spread_ratio": delay_spread_ratio,
+        "queue_spread_ratio": queue_spread_ratio,
+        "saturation_norm_spread_ratio": sat_spread_ratio,
+        "delay_jain_fairness": _jain_service_fairness(delay_vals),
+        "queue_jain_fairness": _jain_service_fairness(queue_vals),
+        "saturation_norm_jain_fairness": _jain_service_fairness(sat_norm_vals),
+        "directional_imbalance": float(
+            np.mean([delay_spread_ratio, queue_spread_ratio, sat_spread_ratio])
+        ),
+    }
+
+    return {
+        "summary": network_summary,
+        "node_rows": node_rows,
+        "lane_rows": lane_rows,
+    }
+
+
 @torch.no_grad()
 def run_acac_episode(env, trainer, max_steps, sat_clip_max):
-    obs, reward, done, info = env.reset()
+    obs, _, done, info = env.reset()
     trainer._reset_hidden()
     t = 0
     step_count = 0
-
-    kpis = {
-        "delay": [],
-        "queue": [],
-        "saturation_raw": [],
-        "saturation_norm": [],
-    }
+    stats = _empty_episode_stats(env)
 
     while not done and step_count < max_steps:
         requiring = info.get("intersection_require_action", [])
@@ -116,75 +329,32 @@ def run_acac_episode(env, trainer, max_steps, sat_clip_max):
             actor_val = float(actor_out.detach().item())
             action_dict[name] = trainer._scale_action(actor_val, eff_range[0], eff_range[1])
 
-        next_obs, reward, done, info = env.step(action_dict)
-
-        avg_delay = float(-reward[:, :, 0].mean())
-        avg_queue = float(-reward[:, :, 1].mean())
-        avg_sat_raw = float(-reward[:, :, 2].mean())
-        avg_sat_norm = _normalize_saturation(avg_sat_raw, sat_clip_max)
-
-        kpis["delay"].append(avg_delay)
-        kpis["queue"].append(avg_queue)
-        kpis["saturation_raw"].append(avg_sat_raw)
-        kpis["saturation_norm"].append(avg_sat_norm)
+        next_obs, _, done, info = env.step(action_dict)
+        _record_snapshot(stats, env, next_obs, sat_clip_max)
 
         obs = next_obs
         t += info["delta_t"]
         step_count += 1
 
-    return kpis
+    return stats
 
 
 def run_fixed_time_episode(env, max_steps, sat_clip_max, fixed_extension=30):
-    obs, reward, done, info = env.reset()
+    obs, _, done, info = env.reset()
     step_count = 0
-
-    kpis = {
-        "delay": [],
-        "queue": [],
-        "saturation_raw": [],
-        "saturation_norm": [],
-    }
+    stats = _empty_episode_stats(env)
 
     while not done and step_count < max_steps:
         requiring = info.get("intersection_require_action", [])
         action_dict = {tls_id: fixed_extension for tls_id in requiring}
 
-        next_obs, reward, done, info = env.step(action_dict)
-
-        avg_delay = float(-reward[:, :, 0].mean())
-        avg_queue = float(-reward[:, :, 1].mean())
-        avg_sat_raw = float(-reward[:, :, 2].mean())
-        avg_sat_norm = _normalize_saturation(avg_sat_raw, sat_clip_max)
-
-        kpis["delay"].append(avg_delay)
-        kpis["queue"].append(avg_queue)
-        kpis["saturation_raw"].append(avg_sat_raw)
-        kpis["saturation_norm"].append(avg_sat_norm)
+        next_obs, _, done, info = env.step(action_dict)
+        _record_snapshot(stats, env, next_obs, sat_clip_max)
 
         obs = next_obs
         step_count += 1
 
-    return kpis
-
-
-def _mean_or_nan(values):
-    return float(np.mean(values)) if values else float("nan")
-
-
-def summarize_kpis(kpis):
-    return {
-        "delay": _mean_or_nan(kpis["delay"]),
-        "queue": _mean_or_nan(kpis["queue"]),
-        "saturation_raw": _mean_or_nan(kpis["saturation_raw"]),
-        "saturation_norm": _mean_or_nan(kpis["saturation_norm"]),
-    }
-
-
-def _improvement_pct(lower_is_better_rl: float, lower_is_better_fixed: float) -> float:
-    if abs(lower_is_better_fixed) < 1e-12:
-        return float("nan")
-    return (lower_is_better_fixed - lower_is_better_rl) / abs(lower_is_better_fixed) * 100.0
+    return stats
 
 
 def _build_comparison(scenario_name, acac_summary, fixed_summary):
@@ -192,6 +362,9 @@ def _build_comparison(scenario_name, acac_summary, fixed_summary):
     queue_improve = _improvement_pct(acac_summary["queue"], fixed_summary["queue"])
     satn_improve = _improvement_pct(
         acac_summary["saturation_norm"], fixed_summary["saturation_norm"]
+    )
+    fairness_improve = _improvement_pct(
+        acac_summary["directional_imbalance"], fixed_summary["directional_imbalance"]
     )
 
     avg_improve = float(np.mean([delay_improve, queue_improve, satn_improve]))
@@ -209,20 +382,21 @@ def _build_comparison(scenario_name, acac_summary, fixed_summary):
         "rl_sat_norm": acac_summary["saturation_norm"],
         "fixed_sat_norm": fixed_summary["saturation_norm"],
         "improve_sat_norm_pct": satn_improve,
+        "rl_directional_imbalance": acac_summary["directional_imbalance"],
+        "fixed_directional_imbalance": fixed_summary["directional_imbalance"],
+        "improve_directional_imbalance_pct": fairness_improve,
         "avg_3kpi_improve_pct": avg_improve,
     }
 
 
 def plot_comparison(
-    acac_kpis,
-    fixed_kpis,
+    acac_summary,
+    fixed_summary,
     scenario_name,
     output_dir,
     total_steps_count,
     sat_clip_max,
 ):
-    acac_summary = summarize_kpis(acac_kpis)
-    fixed_summary = summarize_kpis(fixed_kpis)
     comparison = _build_comparison(scenario_name, acac_summary, fixed_summary)
 
     metric_specs = [
@@ -270,7 +444,9 @@ def plot_comparison(
     print(
         f"[{scenario_name}] Wait improvement: {comparison['improve_delay_pct']:.2f}% | "
         f"Queue improvement: {comparison['improve_queue_pct']:.2f}% | "
-        f"Sat(norm) improvement: {comparison['improve_sat_norm_pct']:.2f}%"
+        f"Sat(norm) improvement: {comparison['improve_sat_norm_pct']:.2f}% | "
+        f"Directional fairness improvement: "
+        f"{comparison['improve_directional_imbalance_pct']:.2f}%"
     )
     print(
         f"[{scenario_name}] Avg 3-KPI improvement (equal weight): "
@@ -279,6 +455,11 @@ def plot_comparison(
     print(
         f"[{scenario_name}] Saturation raw mean (diagnostic): "
         f"RL={comparison['rl_sat_raw']:.2f}, Fixed={comparison['fixed_sat_raw']:.2f}"
+    )
+    print(
+        f"[{scenario_name}] Directional imbalance: "
+        f"RL={comparison['rl_directional_imbalance']:.4f}, "
+        f"Fixed={comparison['fixed_directional_imbalance']:.4f}"
     )
     print(f"Saved 3-KPI plot: {output_path}")
 
@@ -365,6 +546,9 @@ def save_summary_csv(results, output_dir):
         "fixed_sat_norm",
         "rl_sat_norm",
         "improve_sat_norm_pct",
+        "fixed_directional_imbalance",
+        "rl_directional_imbalance",
+        "improve_directional_imbalance_pct",
         "avg_3kpi_improve_pct",
         "fixed_sat_raw",
         "rl_sat_raw",
@@ -378,6 +562,114 @@ def save_summary_csv(results, output_dir):
 
     print(f"Saved summary CSV: {output_path}")
     return str(output_path)
+
+
+def _write_csv(rows, output_path, fieldnames):
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({k: row.get(k, "") for k in fieldnames})
+    print(f"Saved CSV: {output_path}")
+    return str(output_path)
+
+
+def _compare_row_sets(rl_rows, fixed_rows, key_fields, metric_fields):
+    rl_map = {tuple(row[k] for k in key_fields): row for row in rl_rows}
+    fixed_map = {tuple(row[k] for k in key_fields): row for row in fixed_rows}
+    combined_keys = sorted(set(rl_map.keys()) | set(fixed_map.keys()))
+
+    out_rows = []
+    for key in combined_keys:
+        base = {field: key[idx] for idx, field in enumerate(key_fields)}
+        rl_row = rl_map.get(key, {})
+        fixed_row = fixed_map.get(key, {})
+
+        for field in metric_fields:
+            rl_val = rl_row.get(field, float("nan"))
+            fixed_val = fixed_row.get(field, float("nan"))
+            base[f"rl_{field}"] = rl_val
+            base[f"fixed_{field}"] = fixed_val
+            if isinstance(rl_val, (int, float)) and isinstance(fixed_val, (int, float)):
+                base[f"improve_{field}_pct"] = _improvement_pct(float(rl_val), float(fixed_val))
+            else:
+                base[f"improve_{field}_pct"] = float("nan")
+
+        out_rows.append(base)
+
+    return out_rows
+
+
+def save_detailed_comparison_csvs(scenario_name, acac_data, fixed_data, output_dir):
+    node_metric_fields = [
+        "delay_mean",
+        "queue_mean",
+        "saturation_norm_mean",
+        "delay_spread",
+        "queue_spread",
+        "saturation_norm_spread",
+        "delay_std",
+        "queue_std",
+        "saturation_norm_std",
+        "delay_spread_ratio",
+        "queue_spread_ratio",
+        "saturation_norm_spread_ratio",
+        "delay_jain_fairness",
+        "queue_jain_fairness",
+        "saturation_norm_jain_fairness",
+        "directional_imbalance",
+    ]
+    lane_metric_fields = [
+        "delay",
+        "queue",
+        "saturation_raw",
+        "saturation_norm",
+    ]
+
+    node_compare_rows = _compare_row_sets(
+        acac_data["node_rows"],
+        fixed_data["node_rows"],
+        key_fields=["scenario", "tls_id"],
+        metric_fields=node_metric_fields,
+    )
+    rl_node_map = {
+        (row["scenario"], row["tls_id"]): row for row in acac_data["node_rows"]
+    }
+    fixed_node_map = {
+        (row["scenario"], row["tls_id"]): row for row in fixed_data["node_rows"]
+    }
+    for row in node_compare_rows:
+        key = (row["scenario"], row["tls_id"])
+        row["lane_count"] = rl_node_map.get(key, fixed_node_map.get(key, {})).get(
+            "lane_count", ""
+        )
+    lane_compare_rows = _compare_row_sets(
+        acac_data["lane_rows"],
+        fixed_data["lane_rows"],
+        key_fields=["scenario", "tls_id", "lane_id"],
+        metric_fields=lane_metric_fields,
+    )
+
+    node_fieldnames = ["scenario", "tls_id", "lane_count"]
+    for field in node_metric_fields:
+        node_fieldnames.extend([f"fixed_{field}", f"rl_{field}", f"improve_{field}_pct"])
+
+    lane_fieldnames = ["scenario", "tls_id", "lane_id"]
+    for field in lane_metric_fields:
+        lane_fieldnames.extend([f"fixed_{field}", f"rl_{field}", f"improve_{field}_pct"])
+
+    scenario_dir = Path(output_dir) / scenario_name
+    _write_csv(
+        node_compare_rows,
+        scenario_dir / f"{scenario_name}_node_comparison.csv",
+        node_fieldnames,
+    )
+    _write_csv(
+        lane_compare_rows,
+        scenario_dir / f"{scenario_name}_lane_comparison.csv",
+        lane_fieldnames,
+    )
 
 
 def main():
@@ -444,7 +736,6 @@ def main():
         ),
     ]
 
-    selected = None
     if args.scenarios.strip():
         selected = {x.strip() for x in args.scenarios.split(",") if x.strip()}
         scenarios = [s for s in scenarios if s[0] in selected]
@@ -491,28 +782,38 @@ def main():
 
         print("Running ACAC Evaluation...")
         env = TrafficEnvironment(sumocfg_path=sumocfg_path, use_gui=False)
-        acac_kpis = run_acac_episode(env, trainer, args.steps, sat_clip_max=args.sat_clip_max)
+        acac_stats = run_acac_episode(env, trainer, args.steps, sat_clip_max=args.sat_clip_max)
         env.close()
+        acac_data = _summarize_episode(acac_stats, scenario_name, "rl")
 
         print("Running Fixed Time Baseline Evaluation...")
         env = TrafficEnvironment(sumocfg_path=sumocfg_path, use_gui=False)
-        fixed_kpis = run_fixed_time_episode(
+        fixed_stats = run_fixed_time_episode(
             env,
             args.steps,
             sat_clip_max=args.sat_clip_max,
             fixed_extension=args.fixed_extension,
         )
         env.close()
+        fixed_data = _summarize_episode(fixed_stats, scenario_name, "fixed")
 
         comp = plot_comparison(
-            acac_kpis,
-            fixed_kpis,
+            acac_data["summary"],
+            fixed_data["summary"],
             scenario_name,
             output_dir,
             args.steps,
             sat_clip_max=args.sat_clip_max,
         )
         results.append(comp)
+
+        if scenario_name in {"normal_2intersection", "crowded_2intersection"}:
+            save_detailed_comparison_csvs(
+                scenario_name,
+                acac_data,
+                fixed_data,
+                Path(output_dir) / "detailed",
+            )
 
     if not results:
         print("No scenario completed.")
@@ -524,13 +825,15 @@ def main():
     avg_delay = float(np.mean([r["improve_delay_pct"] for r in results]))
     avg_queue = float(np.mean([r["improve_queue_pct"] for r in results]))
     avg_sat_norm = float(np.mean([r["improve_sat_norm_pct"] for r in results]))
+    avg_fairness = float(np.mean([r["improve_directional_imbalance_pct"] for r in results]))
     avg_3kpi = float(np.mean([r["avg_3kpi_improve_pct"] for r in results]))
 
     print("\n============= Overall Improvement (RL vs Fixed) =============")
-    print(f"Avg Wait-Time improvement      : {avg_delay:.2f}%")
-    print(f"Avg Queue-Length improvement   : {avg_queue:.2f}%")
-    print(f"Avg Saturation(norm) improvement: {avg_sat_norm:.2f}%")
-    print(f"Avg 3-KPI improvement (equal)  : {avg_3kpi:.2f}%")
+    print(f"Avg Wait-Time improvement         : {avg_delay:.2f}%")
+    print(f"Avg Queue-Length improvement      : {avg_queue:.2f}%")
+    print(f"Avg Saturation(norm) improvement  : {avg_sat_norm:.2f}%")
+    print(f"Avg Directional Fairness improve  : {avg_fairness:.2f}%")
+    print(f"Avg 3-KPI improvement (equal)     : {avg_3kpi:.2f}%")
     print("============================================================")
 
 

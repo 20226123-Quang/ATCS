@@ -56,6 +56,7 @@ class ACACTrainer:
         self.ent_coef = _cfg.training.ent_coef  # c2: entropy bonus coefficient
         self.reward_delay_weight = _cfg.training.reward_delay_weight
         self.reward_queue_weight = _cfg.training.reward_queue_weight
+        self.reward_saturation_weight = _cfg.training.reward_saturation_weight
         self.device = device
 
         # ===== Book-keeping =====
@@ -84,17 +85,24 @@ class ACACTrainer:
         )
 
     def _global_reward_scalar(self, reward):
-        # reward[:, :, 0] = -wait/delay, reward[:, :, 1] = -queue length
+        # reward[:, :, 0] = -wait/delay, reward[:, :, 1] = -queue length,
+        # reward[:, :, 2] = -degree of saturation
         delay_term = float(reward[:, :, 0].mean())
         queue_term = float(reward[:, :, 1].mean())
+        saturation_term = float(reward[:, :, 2].mean()) if reward.shape[-1] > 2 else 0.0
 
-        weight_sum = abs(self.reward_delay_weight) + abs(self.reward_queue_weight)
+        weight_sum = (
+            abs(self.reward_delay_weight)
+            + abs(self.reward_queue_weight)
+            + abs(self.reward_saturation_weight)
+        )
         if weight_sum <= 1e-8:
-            return float(delay_term + queue_term)
+            return float(delay_term + queue_term + saturation_term)
 
         weighted = (
             self.reward_delay_weight * delay_term
             + self.reward_queue_weight * queue_term
+            + self.reward_saturation_weight * saturation_term
         )
         return float(weighted / weight_sum)
 
