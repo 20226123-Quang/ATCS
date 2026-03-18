@@ -96,7 +96,12 @@ class KPIEngine:
         stats.cycle_outflow_pcu += outflow
         stats.previous_vehicle_ids = set(current_vehicle_ids)
 
-    def compute_lane_kpis(self, lane_id: str, cycle_length_seconds: float) -> LaneKPI:
+    def compute_lane_kpis(
+        self,
+        lane_id: str,
+        cycle_length_seconds: float,
+        min_green_seconds: float = 0.0,
+    ) -> LaneKPI:
         stats = self.get_lane_stats(lane_id)
         constants = self.constants
 
@@ -109,7 +114,13 @@ class KPIEngine:
         # TCCS 24:2018 is a macroscopic formula that expects stable q.
         effective_period = max(float(cycle_steps), cycle_length)
         inflow_pcu_per_hour = stats.cycle_inflow_pcu * 3600.0 / effective_period
-        g_effective = max(stats.green_seconds, eps)
+        # KPI formulas are defined over a full cycle. During rollout we often sample
+        # mid-cycle, and lanes that have not reached their green yet would otherwise
+        # have near-zero capacity, which explodes v/c unrealistically.
+        g_effective = min(
+            max(stats.green_seconds, float(min_green_seconds), eps),
+            cycle_length,
+        )
         g_over_c = min(g_effective / cycle_length, 0.999)
 
         S = constants.saturation_flow_pcu_per_hour_per_lane

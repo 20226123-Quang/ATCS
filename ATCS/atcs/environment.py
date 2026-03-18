@@ -414,6 +414,7 @@ class TrafficEnvironment:
                 lane_kpi = self.kpi_engine.compute_lane_kpis(
                     lane_id,
                     cycle_length_seconds=float(runtime.cycle_length_seconds),
+                    min_green_seconds=float(self.min_green_seconds),
                 )
 
                 # Observation uses the standard metrics
