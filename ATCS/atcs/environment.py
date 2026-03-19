@@ -81,6 +81,7 @@ class TrafficEnvironment:
 
         self.lanes_by_tls: Dict[str, List[str]] = {}
         self.lane_link_indices: Dict[str, Dict[str, List[int]]] = {}
+        self.lane_width_m: Dict[str, float] = {}
         self.max_lanes = 0
 
         self.required_action: Set[str] = set()
@@ -178,6 +179,7 @@ class TrafficEnvironment:
     def _build_lane_topology(self) -> None:
         self.lanes_by_tls = {}
         self.lane_link_indices = {}
+        self.lane_width_m = {}
         self.max_lanes = 0
 
         for tls_id in self.tls_ids:
@@ -194,6 +196,13 @@ class TrafficEnvironment:
                     if incoming_lane:
                         lane_indices.setdefault(incoming_lane, []).append(link_index)
             self.lane_link_indices[tls_id] = lane_indices
+
+            for lane_id in unique_lanes:
+                try:
+                    self.lane_width_m[lane_id] = float(traci.lane.getWidth(lane_id))
+                except Exception:
+                    # Fallback to 3.0 m if SUMO does not expose lane width.
+                    self.lane_width_m[lane_id] = 3.0
 
         self.max_lanes = max(self.max_lanes, 1)
 
@@ -415,6 +424,7 @@ class TrafficEnvironment:
                     lane_id,
                     cycle_length_seconds=float(runtime.cycle_length_seconds),
                     min_green_seconds=float(self.min_green_seconds),
+                    lane_width_m=self.lane_width_m.get(lane_id),
                 )
 
                 # Observation uses the standard metrics

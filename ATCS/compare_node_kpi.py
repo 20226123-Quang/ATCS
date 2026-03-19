@@ -1,5 +1,6 @@
 """Compare KPIs between Trained ACAC and Fixed-Time Baseline per Node."""
 
+import csv
 import os
 import argparse
 from pathlib import Path
@@ -222,18 +223,78 @@ def plot_comparison_per_node(
         print(f"Saved bar plot: {output_path}")
 
 
+def summarize_per_node(acac_kpis, fixed_kpis, scenario_name, tls_names):
+    rows = []
+    for name in tls_names:
+        rl_delay = float(np.mean(acac_kpis["delay"][name])) if acac_kpis["delay"][name] else float("nan")
+        rl_queue = float(np.mean(acac_kpis["queue"][name])) if acac_kpis["queue"][name] else float("nan")
+        rl_saturation = (
+            float(np.mean(acac_kpis["saturation"][name]))
+            if acac_kpis["saturation"][name]
+            else float("nan")
+        )
+        fixed_delay = float(np.mean(fixed_kpis["delay"][name])) if fixed_kpis["delay"][name] else float("nan")
+        fixed_queue = float(np.mean(fixed_kpis["queue"][name])) if fixed_kpis["queue"][name] else float("nan")
+        fixed_saturation = (
+            float(np.mean(fixed_kpis["saturation"][name]))
+            if fixed_kpis["saturation"][name]
+            else float("nan")
+        )
+
+        rows.append(
+            {
+                "scenario": scenario_name,
+                "node": name,
+                "fixed_delay": fixed_delay,
+                "rl_delay": rl_delay,
+                "fixed_queue": fixed_queue,
+                "rl_queue": rl_queue,
+                "fixed_saturation": fixed_saturation,
+                "rl_saturation": rl_saturation,
+            }
+        )
+    return rows
+
+
+def save_summary_csv(rows, output_path):
+    if not rows:
+        return
+
+    fieldnames = [
+        "scenario",
+        "node",
+        "fixed_delay",
+        "rl_delay",
+        "fixed_queue",
+        "rl_queue",
+        "fixed_saturation",
+        "rl_saturation",
+    ]
+    with output_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"Saved per-node KPI summary: {output_path}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--steps", type=int, default=600, help="Max steps to simulate for comparison"
     )
     parser.add_argument("--device", type=str, default="cpu")
+    parser.add_argument(
+        "--scenarios",
+        type=str,
+        default="normal_2intersection,crowded_2intersection",
+        help="Comma-separated scenario names to run.",
+    )
     args = parser.parse_args()
 
     output_dir = Path("checkpoints/compare_kpi/per_node")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    base_data_dir = Path("/data/EGEN2025/Philosophi/NewWork/SimulationData/Evaluate")
+    base_data_dir = Path(__file__).resolve().parents[1] / "SimulationData" / "Evaluate"
 
     scenarios = [
         (
@@ -247,6 +308,10 @@ def main():
             "checkpoints/crowded_2intersection/crowded_2intersection_checkpoint.pt",
         ),
     ]
+
+    selected = {x.strip() for x in args.scenarios.split(",") if x.strip()}
+    scenarios = [s for s in scenarios if s[0] in selected]
+    all_rows = []
 
     for scenario_name, sumocfg_path, checkpoint_path in scenarios:
         print("\n=========================================")
@@ -295,6 +360,11 @@ def main():
         plot_comparison_per_node(
             acac_kpis, fixed_kpis, scenario_name, output_dir, args.steps, tls_names
         )
+        all_rows.extend(
+            summarize_per_node(acac_kpis, fixed_kpis, scenario_name, tls_names)
+        )
+
+    save_summary_csv(all_rows, output_dir / "node_kpi_summary.csv")
 
 
 if __name__ == "__main__":

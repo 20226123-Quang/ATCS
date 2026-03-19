@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 from dataclasses import dataclass, field
-from typing import Dict, Set
+from typing import Dict, Optional, Set
 
 
 from .config_loader import KPIConstants
@@ -96,11 +96,29 @@ class KPIEngine:
         stats.cycle_outflow_pcu += outflow
         stats.previous_vehicle_ids = set(current_vehicle_ids)
 
+    @staticmethod
+    def _lane_width_adjustment_factor(lane_width_m: Optional[float]) -> float:
+        """
+        f_b from lane-width nomograph (Figure 37):
+        - b <= 2.5 m: f_b = 1.18
+        - 2.5 < b < 3.0 m: linear from 1.18 to 1.0
+        - b >= 3.0 m: f_b = 1.0
+        """
+        if lane_width_m is None:
+            return 1.0
+        b = float(lane_width_m)
+        if b <= 2.5:
+            return 1.18
+        if b < 3.0:
+            return 1.0 + (3.0 - b) * (0.18 / 0.5)
+        return 1.0
+
     def compute_lane_kpis(
         self,
         lane_id: str,
         cycle_length_seconds: float,
         min_green_seconds: float = 0.0,
+        lane_width_m: Optional[float] = None,
     ) -> LaneKPI:
         stats = self.get_lane_stats(lane_id)
         constants = self.constants
@@ -123,7 +141,20 @@ class KPIEngine:
         )
         g_over_c = min(g_effective / cycle_length, 0.999)
 
-        S = constants.saturation_flow_pcu_per_hour_per_lane
+        # TCCS 24:2018 Appendix F:
+        # S = 3600 / t_H, with t_H = f1 * f2 * t_H0,
+        # f1 = max(f_b, f_r, f_d), f2 = min(1, f_d)
+        t_h0 = max(constants.saturation_headway_base_seconds, eps)
+        f_hv = max(constants.saturation_headway_f_hv, eps)
+        # f_b is adjusted by actual lane width b (if available), then scaled by config.
+        f_b_nomograph = self._lane_width_adjustment_factor(lane_width_m)
+        f_b = max(constants.saturation_headway_f_b * f_b_nomograph, eps)
+        f_r = max(constants.saturation_headway_f_r, eps)
+        f_d = max(constants.saturation_headway_f_d, eps)
+        f1 = max(f_b, f_r, f_d)
+        f2 = min(1.0, f_d)
+        t_h = max(f_hv * f1 * f2 * t_h0, eps)
+        S = 3600.0 / t_h
         capacity = S * g_over_c
         v_over_c = inflow_pcu_per_hour / max(capacity, eps)  # This is g in TCCS 24:2018
 

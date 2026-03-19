@@ -22,6 +22,11 @@ class SimulationSettings:
 @dataclass(frozen=True)
 class KPIConstants:
     saturation_flow_pcu_per_hour_per_lane: float
+    saturation_headway_base_seconds: float
+    saturation_headway_f_hv: float
+    saturation_headway_f_b: float
+    saturation_headway_f_r: float
+    saturation_headway_f_d: float
     average_vehicle_space_meter: float
     green_wave_pf_default: float
     incremental_delay_k: float
@@ -74,6 +79,13 @@ def load_kpi_config(config_path: Optional[str] = None) -> KPIConfig:
         saturation_flow_pcu_per_hour_per_lane=float(
             constants_raw.get("saturation_flow_pcu_per_hour_per_lane", 1900.0)
         ),
+        saturation_headway_base_seconds=float(
+            constants_raw.get("saturation_headway_base_seconds", 1.8)
+        ),
+        saturation_headway_f_hv=float(constants_raw.get("saturation_headway_f_hv", 1.0)),
+        saturation_headway_f_b=float(constants_raw.get("saturation_headway_f_b", 1.0)),
+        saturation_headway_f_r=float(constants_raw.get("saturation_headway_f_r", 1.0)),
+        saturation_headway_f_d=float(constants_raw.get("saturation_headway_f_d", 1.0)),
         average_vehicle_space_meter=float(
             constants_raw.get("average_vehicle_space_meter", 6.5)
         ),
