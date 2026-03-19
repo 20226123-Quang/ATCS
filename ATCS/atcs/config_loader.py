@@ -21,7 +21,6 @@ class SimulationSettings:
 
 @dataclass(frozen=True)
 class KPIConstants:
-    saturation_flow_pcu_per_hour_per_lane: float
     saturation_headway_base_seconds: float
     saturation_headway_f_hv: float
     saturation_headway_f_b: float
@@ -76,9 +75,6 @@ def load_kpi_config(config_path: Optional[str] = None) -> KPIConfig:
 
     constants_raw = raw.get("constants", {})
     constants = KPIConstants(
-        saturation_flow_pcu_per_hour_per_lane=float(
-            constants_raw.get("saturation_flow_pcu_per_hour_per_lane", 1900.0)
-        ),
         saturation_headway_base_seconds=float(
             constants_raw.get("saturation_headway_base_seconds", 1.8)
         ),

@@ -19,7 +19,7 @@
       "formula": "g = q / (S * f) --- (Công thức F-36 theo TCCS 24:2018/TCĐBVN)",
       "parameters_calculation": {
         "q (Lưu lượng thực tế [PCU/h])": "Lấy tổng lượng phương tiện đi vào nhánh (cycle_inflow_pcu) trong khoảng thời gian phân tích, nhân với phần bù thời gian để ra quy mô PCU/h. Trong SUMO (kpi_engine.py), ta có thể lấy tích lũy inflow đếm được ở mỗi bước.",
-        "S (Lưu lượng dòng bão hòa [PCU/h])": "Sử dụng hằng số chuẩn `saturation_flow_pcu_per_hour_per_lane` = 1900 PCU/h/l. Có thể thay đổi theo hướng (rẽ trái/phải, độ dốc, bề rộng mặt đường...).",
+        "S (Lưu lượng dòng bão hòa [PCU/h])": "Tính theo công thức chuẩn: `S = 3600 / t_H`, với `t_H = f_hv * f1 * f2 * t_H0`, `f1 = max(f_b, f_r, f_d)`, `f2 = min(1, f_d)`.",
         "f (Tỉ lệ thời gian xanh có hiệu [-])": "Tính bằng (thời_gian_đèn_xanh / thời_gian_chu_kỳ). Ví dụ: `green_seconds / cycle_length`."
       },
       "usage_in_reward": "Đưa vào thành phần thứ 3 của hàm phần thưởng: `reward[:, :, 2] = -g`. RL Agent sẽ học cách giảm mức độ bão hòa g về dưới 0.85 để không bị trừ điểm, giúp phân bổ tỉ lệ xanh (f) phù hợp theo lưu lượng (q)."
@@ -49,7 +49,6 @@
     }
   },
   "constants": {
-    "saturation_flow_pcu_per_hour_per_lane": 1900.0,
     "saturation_headway_base_seconds": 1.8,
     "saturation_headway_f_hv": 1.0,
     "saturation_headway_f_b": 1.0,
