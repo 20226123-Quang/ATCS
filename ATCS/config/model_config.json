@@ -23,9 +23,9 @@
         "eps": 1e-6,
         "vf_coef": 0.5,
         "ent_coef": 0.01,
-        "reward_delay_weight": 0.8,
+        "reward_delay_weight": 1.25,
         "reward_queue_weight": 1.0,
-        "reward_saturation_weight": 1.25
+        "reward_saturation_weight": 1.0
 
     }
 }
