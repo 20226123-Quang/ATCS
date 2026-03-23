@@ -32,10 +32,10 @@ class ParsedSUMONetwork:
 
 
 def _classify_phase_type(state: str) -> str:
-    if any(char in state for char in ("G", "g")):
-        return "green"
     if any(char in state for char in ("y", "Y")):
         return "yellow"
+    if any(char in state for char in ("G", "g")):
+        return "green"
     return "red"
 
 
@@ -59,15 +59,30 @@ def _resolve_net_file(sumocfg_path: Path) -> Path:
     return net_file_path
 
 
-def parse_sumo_network(sumocfg_path: str, yellow_fallback_seconds: int = 3) -> ParsedSUMONetwork:
-    """Parse SUMO .sumocfg and corresponding .net.xml traffic light programs."""
-    cfg_path = Path(sumocfg_path).resolve()
-    net_path = _resolve_net_file(cfg_path)
+def _resolve_additional_files(sumocfg_path: Path) -> list[Path]:
+    root = ET.parse(sumocfg_path).getroot()
+    additional_paths: list[Path] = []
 
-    net_root = ET.parse(net_path).getroot()
-    tls_programs: Dict[str, TLSProgram] = {}
+    for element in root.findall(".//additional-files"):
+        value = element.get("value", "")
+        if not value:
+            continue
+        for raw_path in value.replace(";", ",").split(","):
+            additional_value = raw_path.strip()
+            if not additional_value:
+                continue
+            additional_path = Path(os.path.join(sumocfg_path.parent, additional_value)).resolve()
+            if additional_path.exists():
+                additional_paths.append(additional_path)
+    return additional_paths
 
-    for tl_logic in net_root.findall("tlLogic"):
+
+def _extract_tls_programs(
+    xml_root: ET.Element,
+    yellow_fallback_seconds: int,
+    tls_programs: Dict[str, TLSProgram],
+) -> None:
+    for tl_logic in xml_root.findall("tlLogic"):
         tls_id = tl_logic.get("id")
         if not tls_id:
             continue
@@ -109,8 +124,23 @@ def parse_sumo_network(sumocfg_path: str, yellow_fallback_seconds: int = 3) -> P
             first_green_index=first_green_index,
         )
 
+
+def parse_sumo_network(sumocfg_path: str, yellow_fallback_seconds: int = 3) -> ParsedSUMONetwork:
+    """Parse SUMO .sumocfg and corresponding .net.xml traffic light programs."""
+    cfg_path = Path(sumocfg_path).resolve()
+    net_path = _resolve_net_file(cfg_path)
+    additional_paths = _resolve_additional_files(cfg_path)
+
+    net_root = ET.parse(net_path).getroot()
+    tls_programs: Dict[str, TLSProgram] = {}
+    _extract_tls_programs(net_root, yellow_fallback_seconds, tls_programs)
+
+    for additional_path in additional_paths:
+        additional_root = ET.parse(additional_path).getroot()
+        _extract_tls_programs(additional_root, yellow_fallback_seconds, tls_programs)
+
     if not tls_programs:
-        raise ValueError(f"No tlLogic entries found in {net_path}")
+        raise ValueError(f"No tlLogic entries found in {net_path} or its additional-files")
 
     ordered_programs = {tls_id: tls_programs[tls_id] for tls_id in sorted(tls_programs)}
     return ParsedSUMONetwork(
