@@ -63,10 +63,12 @@ class TrafficEnvironment:
         self.step_length_seconds = max(int(sim_cfg.default_step_length_seconds), 1)
         self.min_green_seconds = int(sim_cfg.min_green_seconds)
         self.max_green_seconds = int(sim_cfg.max_green_seconds)
-        self.cycle_length_seconds = int(sim_cfg.cycle_length_seconds)
+        self.config_cycle_length_seconds = int(sim_cfg.cycle_length_seconds)
+        self.cycle_length_seconds = self.config_cycle_length_seconds
         self.max_extension_seconds = max(
             self.max_green_seconds - self.min_green_seconds, 0
         )
+        self.reference_green_seconds = 45
         self.use_gui = sim_cfg.use_gui if use_gui is None else bool(use_gui)
         self.max_episode_seconds = (
             int(sim_cfg.max_episode_seconds)
@@ -154,6 +156,18 @@ class TrafficEnvironment:
                 states_by_tls[tls_id] = states
         return states_by_tls
 
+    def _derive_cycle_length_seconds(self, phases: List[PhaseDefinition]) -> int:
+        green_count = sum(1 for phase in phases if phase.phase_type == "green")
+        if green_count <= 0:
+            return max(self.config_cycle_length_seconds, 1)
+
+        yellow_seconds = max(
+            int(self.kpi_config.simulation.yellow_fallback_seconds),
+            0,
+        )
+        per_phase_seconds = self.reference_green_seconds + yellow_seconds
+        return max(green_count * per_phase_seconds, 1)
+
     def _refresh_tls_programs_from_sumo(self) -> None:
         self._ensure_connection()
 
@@ -235,7 +249,7 @@ class TrafficEnvironment:
                 (phase.index for phase in phases if phase.phase_type == "green"),
                 0,
             )
-            base_cycle_seconds = self.cycle_length_seconds
+            base_cycle_seconds = self._derive_cycle_length_seconds(phases)
 
             tls_programs[tls_id] = TLSProgram(
                 tls_id=tls_id,
@@ -247,6 +261,13 @@ class TrafficEnvironment:
         if tls_programs:
             self.tls_programs = {tls_id: tls_programs[tls_id] for tls_id in sorted(tls_programs)}
             self.tls_ids = list(self.tls_programs.keys())
+            unique_cycle_lengths = {
+                program.base_cycle_seconds for program in self.tls_programs.values()
+            }
+            if len(unique_cycle_lengths) == 1:
+                self.cycle_length_seconds = next(iter(unique_cycle_lengths))
+            else:
+                self.cycle_length_seconds = self.config_cycle_length_seconds
 
     def _ensure_connection(self) -> None:
         if not self.connected:
@@ -306,7 +327,7 @@ class TrafficEnvironment:
                 current_phase_index=phase_index,
                 remaining_phase_seconds=max(int(phase.duration_seconds), 0),
                 cycle_elapsed_seconds=0,
-                cycle_length_seconds=self.cycle_length_seconds,
+                cycle_length_seconds=program.base_cycle_seconds,
                 decision_pending=True,
             )
             traci.trafficlight.setRedYellowGreenState(tls_id, phase.state)
@@ -399,9 +420,8 @@ class TrafficEnvironment:
 
             if wrapped_cycle:
                 runtime.cycle_elapsed_seconds = 0
-                # Always reset to the canonical fixed cycle length from config,
-                # ignoring any extension added by RL agent during this cycle.
-                runtime.cycle_length_seconds = self.cycle_length_seconds
+                # Reset to the cycle length derived from the active program phases.
+                runtime.cycle_length_seconds = program.base_cycle_seconds
                 self._reset_cycle_lane_metrics(tls_id)
 
             phase = program.phases[next_index]
