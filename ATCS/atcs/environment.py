@@ -18,6 +18,7 @@ from .sumo_parser import (
     ParsedSUMONetwork,
     TLSProgram,
     parse_sumo_network,
+    resolve_sumocfg_path,
     PhaseDefinition,
     _classify_phase_type,
 )
@@ -49,7 +50,8 @@ class TrafficEnvironment:
         max_episode_seconds: Optional[int] = None,
         sumo_binary: Optional[str] = None,
     ) -> None:
-        self.sumocfg_path = Path(sumocfg_path).resolve()
+        self.connected = False
+        self.sumocfg_path = resolve_sumocfg_path(sumocfg_path)
         self.kpi_config: KPIConfig = load_kpi_config(kpi_config_path)
         self.network: ParsedSUMONetwork = parse_sumo_network(
             str(self.sumocfg_path),
@@ -76,7 +78,6 @@ class TrafficEnvironment:
 
         self.sumo_binary = sumo_binary or self._resolve_sumo_binary(self.use_gui)
         self.connection_label = f"ATCS_{uuid.uuid4().hex[:8]}"
-        self.connected = False
 
         self.kpi_engine = KPIEngine(self.kpi_config.constants)
         self.tls_runtime: Dict[str, TLSRuntimeState] = {}

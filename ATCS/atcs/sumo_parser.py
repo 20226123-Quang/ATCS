@@ -31,6 +31,32 @@ class ParsedSUMONetwork:
     tls_programs: Dict[str, TLSProgram]
 
 
+def _normalize_path_string(raw_path: str | Path) -> str:
+    return str(raw_path).replace("\\", os.sep).replace("/", os.sep)
+
+
+def resolve_sumocfg_path(sumocfg_path: str | Path) -> Path:
+    normalized = Path(_normalize_path_string(sumocfg_path)).expanduser()
+    if normalized.is_absolute():
+        candidates = [normalized]
+    else:
+        project_root = Path(__file__).resolve().parents[2]
+        candidates = [
+            Path.cwd() / normalized,
+            project_root / normalized,
+        ]
+
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved.exists():
+            return resolved
+
+    checked_paths = ", ".join(str(candidate.resolve()) for candidate in candidates)
+    raise FileNotFoundError(
+        f"SUMO config not found: {sumocfg_path}. Checked: {checked_paths}"
+    )
+
+
 def _classify_phase_type(state: str) -> str:
     if any(char in state for char in ("y", "Y")):
         return "yellow"
@@ -53,7 +79,9 @@ def _resolve_net_file(sumocfg_path: Path) -> Path:
     if not net_value:
         raise ValueError(f"net-file entry not found in {sumocfg_path}")
 
-    net_file_path = Path(os.path.join(sumocfg_path.parent, net_value)).resolve()
+    net_file_path = Path(
+        os.path.join(sumocfg_path.parent, _normalize_path_string(net_value))
+    ).resolve()
     if not net_file_path.exists():
         raise FileNotFoundError(f"SUMO net file not found: {net_file_path}")
     return net_file_path
@@ -71,7 +99,12 @@ def _resolve_additional_files(sumocfg_path: Path) -> list[Path]:
             additional_value = raw_path.strip()
             if not additional_value:
                 continue
-            additional_path = Path(os.path.join(sumocfg_path.parent, additional_value)).resolve()
+            additional_path = Path(
+                os.path.join(
+                    sumocfg_path.parent,
+                    _normalize_path_string(additional_value),
+                )
+            ).resolve()
             if additional_path.exists():
                 additional_paths.append(additional_path)
     return additional_paths
@@ -127,7 +160,7 @@ def _extract_tls_programs(
 
 def parse_sumo_network(sumocfg_path: str, yellow_fallback_seconds: int = 3) -> ParsedSUMONetwork:
     """Parse SUMO .sumocfg and corresponding .net.xml traffic light programs."""
-    cfg_path = Path(sumocfg_path).resolve()
+    cfg_path = resolve_sumocfg_path(sumocfg_path)
     net_path = _resolve_net_file(cfg_path)
     additional_paths = _resolve_additional_files(cfg_path)
 
