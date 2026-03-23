@@ -19,7 +19,6 @@ from acac import (
     load_model_config,
 )
 from atcs.environment import TrafficEnvironment
-from atcs.sumo_parser import resolve_sumocfg_path
 
 _cfg = load_model_config()
 
@@ -133,7 +132,6 @@ def main() -> None:
         help="Optional path to checkpoint (.pt) to continue/fine-tune training",
     )
     args = parser.parse_args()
-    args.sumocfg = str(resolve_sumocfg_path(args.sumocfg))
 
     # ---- Setup Logging & Checkpoint Directories ----
     cfg_path = Path(args.sumocfg)
