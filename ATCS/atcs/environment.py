@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import uuid
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -18,6 +19,7 @@ from .sumo_parser import (
     TLSProgram,
     parse_sumo_network,
     PhaseDefinition,
+    _classify_phase_type,
 )
 
 
@@ -89,60 +91,6 @@ class TrafficEnvironment:
         self.simulation_time = 0
         self.done = False
 
-        # Override SUMO parsed programs with config-based conflict-free plans if available
-        self._inject_config_plans()
-
-    def _inject_config_plans(self) -> None:
-        """
-        Override the environment's TLS programs with the conflict-free phase
-        states from kpi_config.json. This ensures it's universally applied.
-        """
-        plans_dict = self.kpi_config.fixed_time_plans
-        if not plans_dict:
-            return
-
-        for tls_id, plan in plans_dict.items():
-            if tls_id not in self.tls_programs:
-                continue
-
-            phases = []
-            for idx, state in enumerate(plan):
-                has_green = any(c in state for c in "Gg")
-                has_yellow = any(c in state for c in "Yy")
-
-                if has_green and not has_yellow:
-                    phase_type = "green"
-                    duration = (
-                        0  # Green phases trigger immediately for explicit actions
-                    )
-                elif has_yellow:
-                    phase_type = "yellow"
-                    duration = self.kpi_config.simulation.yellow_fallback_seconds
-                else:
-                    phase_type = "red"
-                    duration = 0  # Default fallback
-
-                phases.append(
-                    PhaseDefinition(
-                        index=idx,
-                        duration_seconds=int(duration),
-                        state=state,
-                        phase_type=phase_type,
-                    )
-                )
-
-            first_green_index = next(
-                (p.index for p in phases if p.phase_type == "green"), 0
-            )
-            base_cycle_seconds = self.cycle_length_seconds
-
-            self.tls_programs[tls_id] = TLSProgram(
-                tls_id=tls_id,
-                phases=tuple(phases),
-                base_cycle_seconds=base_cycle_seconds,
-                first_green_index=first_green_index,
-            )
-
     def _resolve_sumo_binary(self, use_gui: bool) -> str:
         if use_gui:
             return os.getenv("SUMO_GUI_BINARY", "sumo-gui")
@@ -170,6 +118,135 @@ class TrafficEnvironment:
         traci.start(sumo_cmd, label=self.connection_label)
         traci.switch(self.connection_label)
         self.connected = True
+
+    def _resolve_scenario_phase_config(self) -> Optional[Path]:
+        candidate_names = [
+            "2nutgiao_fixedtime(2).tll.xml",
+            "2nutgiao.fixedtime.ttl.xml",
+        ]
+        for name in candidate_names:
+            candidate = self.sumocfg_path.parent / name
+            if candidate.exists():
+                return candidate
+
+        wildcard_candidates = sorted(
+            self.sumocfg_path.parent.glob("*fixedtime*.xml")
+        )
+        return wildcard_candidates[0] if wildcard_candidates else None
+
+    def _load_scenario_phase_states(self) -> Dict[str, List[str]]:
+        phase_config_path = self._resolve_scenario_phase_config()
+        if phase_config_path is None:
+            return {}
+
+        root = ET.parse(phase_config_path).getroot()
+        states_by_tls: Dict[str, List[str]] = {}
+        for tl_logic in root.findall("tlLogic"):
+            tls_id = tl_logic.get("id")
+            if not tls_id:
+                continue
+            states = [
+                phase.get("state", "")
+                for phase in tl_logic.findall("phase")
+                if phase.get("state")
+            ]
+            if states:
+                states_by_tls[tls_id] = states
+        return states_by_tls
+
+    def _refresh_tls_programs_from_sumo(self) -> None:
+        self._ensure_connection()
+
+        tls_programs: Dict[str, TLSProgram] = {}
+        yellow_fallback = self.kpi_config.simulation.yellow_fallback_seconds
+        scenario_phase_states = self._load_scenario_phase_states()
+
+        for tls_id in traci.trafficlight.getIDList():
+            current_program_id = str(traci.trafficlight.getProgram(tls_id))
+            logics = traci.trafficlight.getAllProgramLogics(tls_id)
+            selected_logic = None
+
+            for logic in logics:
+                logic_program_id = str(getattr(logic, "programID", getattr(logic, "subID", "")))
+                if logic_program_id == current_program_id:
+                    selected_logic = logic
+                    break
+
+            if selected_logic is None and logics:
+                selected_logic = logics[0]
+            if selected_logic is None:
+                continue
+
+            raw_phases = getattr(selected_logic, "phases", None)
+            if raw_phases is None and hasattr(selected_logic, "getPhases"):
+                raw_phases = selected_logic.getPhases()
+            if not raw_phases:
+                continue
+
+            phases = []
+            for idx, phase in enumerate(raw_phases):
+                state = getattr(phase, "state", "")
+                phase_type = _classify_phase_type(state)
+                duration_raw = getattr(phase, "duration", None)
+                try:
+                    duration = (
+                        int(round(float(duration_raw)))
+                        if duration_raw is not None
+                        else yellow_fallback
+                    )
+                except (TypeError, ValueError):
+                    duration = yellow_fallback
+                duration = max(duration, 0)
+                if phase_type == "green":
+                    # Green time is decided by ATCS actions / fixed-time controller.
+                    duration = 0
+                elif phase_type == "red":
+                    duration = 0
+
+                phases.append(
+                    PhaseDefinition(
+                        index=idx,
+                        duration_seconds=duration,
+                        state=state,
+                        phase_type=phase_type,
+                    )
+                )
+
+            if not phases:
+                continue
+
+            override_states = scenario_phase_states.get(tls_id)
+            if override_states and len(override_states) == len(phases):
+                phases = [
+                    PhaseDefinition(
+                        index=phase.index,
+                        duration_seconds=(
+                            yellow_fallback
+                            if _classify_phase_type(override_state) == "yellow"
+                            else 0
+                        ),
+                        state=override_state,
+                        phase_type=_classify_phase_type(override_state),
+                    )
+                    for phase, override_state in zip(phases, override_states)
+                ]
+
+            first_green_index = next(
+                (phase.index for phase in phases if phase.phase_type == "green"),
+                0,
+            )
+            base_cycle_seconds = self.cycle_length_seconds
+
+            tls_programs[tls_id] = TLSProgram(
+                tls_id=tls_id,
+                phases=tuple(phases),
+                base_cycle_seconds=base_cycle_seconds,
+                first_green_index=first_green_index,
+            )
+
+        if tls_programs:
+            self.tls_programs = {tls_id: tls_programs[tls_id] for tls_id in sorted(tls_programs)}
+            self.tls_ids = list(self.tls_programs.keys())
 
     def _ensure_connection(self) -> None:
         if not self.connected:
@@ -571,6 +648,7 @@ class TrafficEnvironment:
         self.close()
         self._start_sumo()
         self._ensure_connection()
+        self._refresh_tls_programs_from_sumo()
 
         self.simulation_time = 0
         self.done = False

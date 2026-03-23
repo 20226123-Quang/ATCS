@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import math
+import os
 import random
 import shutil
 import subprocess
+import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -77,6 +79,11 @@ VEHICLE_TYPES = [
 ]
 VEHICLE_WEIGHTS = [0.44, 0.30, 0.12, 0.05, 0.09]
 VEHICLE_TYPE_IDS = [vehicle_type_id for vehicle_type_id, _ in VEHICLE_TYPES]
+TWO_INTERSECTION_COUNTS = {
+    "Crowded": 2493,
+    "Normal": 1232,
+    "Few": 320,
+}
 
 
 def indent_and_write(tree: ET.ElementTree, path: Path) -> None:
@@ -106,7 +113,11 @@ def assign_vehicle_types(route_path: Path, seed: int) -> None:
     indent_and_write(tree, route_path)
 
 
-def write_sumocfg(target_dir: Path) -> None:
+def write_sumocfg(
+    target_dir: Path,
+    config_name: str = "config.sumocfg",
+    additional_files: list[str] | None = None,
+) -> None:
     root = ET.Element(
         "sumoConfiguration",
         {
@@ -117,6 +128,8 @@ def write_sumocfg(target_dir: Path) -> None:
     input_elem = ET.SubElement(root, "input")
     ET.SubElement(input_elem, "net-file", {"value": "network.net.xml"})
     ET.SubElement(input_elem, "route-files", {"value": "route.rou.xml"})
+    if additional_files:
+        ET.SubElement(input_elem, "additional-files", {"value": ",".join(additional_files)})
 
     time_elem = ET.SubElement(root, "time")
     ET.SubElement(time_elem, "begin", {"value": "0"})
@@ -126,7 +139,169 @@ def write_sumocfg(target_dir: Path) -> None:
     ET.SubElement(report_elem, "verbose", {"value": "false"})
     ET.SubElement(report_elem, "no-step-log", {"value": "true"})
 
-    indent_and_write(ET.ElementTree(root), target_dir / "config.sumocfg")
+    indent_and_write(ET.ElementTree(root), target_dir / config_name)
+
+
+def resolve_random_trips_script() -> str:
+    random_trips_path = shutil.which("randomTrips.py")
+    if random_trips_path:
+        return random_trips_path
+
+    sumo_home = os.environ.get("SUMO_HOME")
+    if sumo_home:
+        candidate = Path(sumo_home) / "tools" / "randomTrips.py"
+        if candidate.exists():
+            return str(candidate)
+
+    raise FileNotFoundError("randomTrips.py was not found in PATH or SUMO_HOME/tools.")
+
+
+def collect_route_edges(route_path: Path) -> list[str]:
+    root = ET.parse(route_path).getroot()
+    route_edges: list[str] = []
+
+    for vehicle in root.findall("vehicle"):
+        route = vehicle.find("route")
+        if route is not None and route.get("edges"):
+            route_edges.append(route.get("edges"))
+
+    if route_edges:
+        return route_edges
+
+    for route in root.findall("route"):
+        if route.get("edges"):
+            route_edges.append(route.get("edges"))
+
+    if not route_edges:
+        raise ValueError(f"No route edges were found in {route_path}.")
+    return route_edges
+
+
+def choose_route_subset(source_routes: list[str], vehicle_count: int, seed: int) -> list[str]:
+    rng = random.Random(seed)
+    if vehicle_count <= len(source_routes):
+        return rng.sample(source_routes, k=vehicle_count)
+    return [rng.choice(source_routes) for _ in range(vehicle_count)]
+
+
+def build_route_file_from_edges(
+    route_path: Path,
+    route_edges_list: list[str],
+    seed: int,
+    id_prefix: str,
+) -> None:
+    rng = random.Random(seed)
+    routes = list(route_edges_list)
+    rng.shuffle(routes)
+
+    root = ET.Element(
+        "routes",
+        {
+            "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+            "xsi:noNamespaceSchemaLocation": "http://sumo.dlr.de/xsd/routes_file.xsd",
+        },
+    )
+    headway = SUMO_DURATION / max(len(routes), 1)
+
+    for index, route_edges in enumerate(routes):
+        depart = min(index * headway + rng.uniform(0.0, 0.35 * headway), SUMO_DURATION - 0.1)
+        vehicle = ET.SubElement(
+            root,
+            "vehicle",
+            {
+                "id": f"{id_prefix}_{index}",
+                "depart": f"{depart:.2f}",
+            },
+        )
+        ET.SubElement(vehicle, "route", {"edges": route_edges})
+
+    indent_and_write(ET.ElementTree(root), route_path)
+
+
+def generate_route_pool_from_network(
+    network_path: Path,
+    route_count: int,
+    seed: int,
+) -> list[str]:
+    build_dir = network_path.parent / "_build_pool"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    route_pool_path = build_dir / "seed_pool.rou.xml"
+    period = SUMO_DURATION / max(route_count, 1)
+    cmd = [
+        sys.executable,
+        resolve_random_trips_script(),
+        "-n",
+        str(network_path),
+        "-r",
+        str(route_pool_path),
+        "--seed",
+        str(seed),
+        "--end",
+        f"{SUMO_DURATION:.0f}",
+        "--period",
+        f"{period:.6f}",
+        "--fringe-factor",
+        "5",
+        "--validate",
+    ]
+    subprocess.run(cmd, check=True, capture_output=True, text=True)
+    route_edges = collect_route_edges(route_pool_path)
+    shutil.rmtree(build_dir, ignore_errors=True)
+    return route_edges
+
+
+def build_nonconflict_phase_file(network_path: Path, output_path: Path) -> None:
+    network_root = ET.parse(network_path).getroot()
+    phase_root = ET.Element("additionals")
+
+    for tl_logic in network_root.findall("tlLogic"):
+        tls_id = tl_logic.get("id")
+        if not tls_id:
+            continue
+
+        connections = []
+        for connection in network_root.findall("connection"):
+            if connection.get("tl") != tls_id:
+                continue
+            link_index = connection.get("linkIndex")
+            from_edge = connection.get("from")
+            if link_index is None or from_edge is None:
+                continue
+            connections.append((int(link_index), from_edge))
+
+        if not connections:
+            continue
+
+        grouped_links: dict[str, list[int]] = {}
+        for link_index, from_edge in connections:
+            grouped_links.setdefault(from_edge, []).append(link_index)
+
+        link_count = max(link_index for link_index, _ in connections) + 1
+        phase_logic = ET.SubElement(
+            phase_root,
+            "tlLogic",
+            {
+                "id": tls_id,
+                "type": "static",
+                "programID": "fixed_nonconflict",
+                "offset": "0",
+            },
+        )
+
+        for _, link_indices in sorted(
+            ((min(indices), indices) for indices in grouped_links.values()),
+            key=lambda item: item[0],
+        ):
+            green_state = ["r"] * link_count
+            yellow_state = ["r"] * link_count
+            for link_index in sorted(set(link_indices)):
+                green_state[link_index] = "G"
+                yellow_state[link_index] = "y"
+
+            ET.SubElement(phase_logic, "phase", {"state": "".join(green_state)})
+            ET.SubElement(phase_logic, "phase", {"state": "".join(yellow_state)})
+
+    indent_and_write(ET.ElementTree(phase_root), output_path)
 
 
 def to_point(x: float, y: float) -> str:
@@ -398,6 +573,67 @@ def build_route_file_for_single_intersection(
     indent_and_write(ET.ElementTree(root), route_path)
 
 
+def build_route_file_for_existing_tls_network(
+    network_path: Path,
+    route_path: Path,
+    vehicle_count: int,
+    seed: int,
+) -> None:
+    network_root = ET.parse(network_path).getroot()
+    route_options: dict[str, list[str]] = {}
+
+    for connection in network_root.findall("connection"):
+        if not connection.get("tl"):
+            continue
+
+        from_edge = connection.get("from")
+        to_edge = connection.get("to")
+        if not from_edge or not to_edge:
+            continue
+        if from_edge.startswith(":") or to_edge.startswith(":"):
+            continue
+
+        route_options.setdefault(from_edge, [])
+        if to_edge not in route_options[from_edge]:
+            route_options[from_edge].append(to_edge)
+
+    if not route_options:
+        raise ValueError(f"No valid TLS-controlled edge routes found in {network_path}")
+
+    incoming_edges = sorted(route_options)
+    rng = random.Random(seed)
+    root = ET.Element(
+        "routes",
+        {
+            "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+            "xsi:noNamespaceSchemaLocation": "http://sumo.dlr.de/xsd/routes_file.xsd",
+        },
+    )
+    add_vehicle_types(root)
+
+    headway = SUMO_DURATION / max(vehicle_count, 1)
+    for index in range(vehicle_count):
+        source_edge = rng.choice(incoming_edges)
+        target_edge = rng.choice(route_options[source_edge])
+
+        base_depart = index * headway
+        jitter = rng.uniform(-0.25 * headway, 0.25 * headway)
+        depart = min(max(base_depart + jitter, 0.0), SUMO_DURATION - 0.1)
+
+        vehicle = ET.SubElement(
+            root,
+            "vehicle",
+            {
+                "id": f"veh_{index}",
+                "depart": f"{depart:.2f}",
+                "type": rng.choices(VEHICLE_TYPE_IDS, weights=VEHICLE_WEIGHTS, k=1)[0],
+            },
+        )
+        ET.SubElement(vehicle, "route", {"edges": f"{source_edge} {target_edge}"})
+
+    indent_and_write(ET.ElementTree(root), route_path)
+
+
 def sample_existing_route_file(
     source_route_path: Path,
     target_route_path: Path,
@@ -451,21 +687,96 @@ def prepare_one_intersection_scenarios() -> None:
 
     for name, angles_deg, approach_length, vehicle_count, seed in scenarios:
         scenario_dir = one_dir / name
-        build_plain_one_intersection_network(scenario_dir, name.lower(), angles_deg, approach_length)
-        build_route_file_for_single_intersection(
-            scenario_dir / "route.rou.xml",
-            arm_count=len(angles_deg),
-            vehicle_count=vehicle_count,
-            seed=seed,
-        )
+        existing_osm_network = (scenario_dir / "map.osm").exists() and (scenario_dir / "network.net.xml").exists()
+        if existing_osm_network:
+            build_route_file_for_existing_tls_network(
+                scenario_dir / "network.net.xml",
+                scenario_dir / "route.rou.xml",
+                vehicle_count=vehicle_count,
+                seed=seed,
+            )
+        else:
+            build_plain_one_intersection_network(scenario_dir, name.lower(), angles_deg, approach_length)
+            build_route_file_for_single_intersection(
+                scenario_dir / "route.rou.xml",
+                arm_count=len(angles_deg),
+                vehicle_count=vehicle_count,
+                seed=seed,
+            )
         write_sumocfg(scenario_dir)
 
 
-def prepare_few_scenarios() -> None:
+def prepare_two_intersection_scenarios_from_standard() -> bool:
+    standard_dir = EVALUATE_DIR / "Crowded" / "2nut"
+    standard_network = standard_dir / "2nutgiao.net.xml"
+    standard_osm = standard_dir / "2nutgiao.osm"
+    canonical_phase_template = (
+        EVALUATE_DIR / "Crowded" / "2Intersection" / "2nutgiao_fixedtime(2).tll.xml"
+    )
+    if not standard_network.exists():
+        return False
+
+    scenario_dirs = {
+        "Crowded": EVALUATE_DIR / "Crowded" / "2Intersection",
+        "Normal": EVALUATE_DIR / "Normal" / "2Intersection",
+        "Few": EVALUATE_DIR / "Few" / "2Intersection",
+    }
+
+    for scenario_dir in scenario_dirs.values():
+        scenario_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(standard_network, scenario_dir / "network.net.xml")
+        if standard_osm.exists():
+            shutil.copy2(standard_osm, scenario_dir / "2nutgiao.osm")
+        scenario_phase_template = scenario_dir / "2nutgiao_fixedtime(2).tll.xml"
+        if canonical_phase_template.exists() and canonical_phase_template.resolve() != scenario_phase_template.resolve():
+            shutil.copy2(canonical_phase_template, scenario_phase_template)
+        phase_config_path = scenario_dir / "2nutgiao.fixedtime.ttl.xml"
+        if not phase_config_path.exists():
+            build_nonconflict_phase_file(
+                scenario_dir / "network.net.xml",
+                phase_config_path,
+            )
+        write_sumocfg(
+            scenario_dir,
+            additional_files=scenario_additional_files(scenario_dir),
+        )
+
+    pool_target = max(TWO_INTERSECTION_COUNTS.values()) + 900
+    route_pool = generate_route_pool_from_network(standard_network, route_count=pool_target, seed=451)
+    if len(route_pool) < TWO_INTERSECTION_COUNTS["Crowded"]:
+        raise RuntimeError(
+            "The generated canonical route pool is smaller than the crowded 2Intersection demand target."
+        )
+
+    crowded_routes = choose_route_subset(route_pool, TWO_INTERSECTION_COUNTS["Crowded"], seed=452)
+    normal_routes = choose_route_subset(crowded_routes, TWO_INTERSECTION_COUNTS["Normal"], seed=453)
+    few_routes = choose_route_subset(normal_routes, TWO_INTERSECTION_COUNTS["Few"], seed=454)
+
+    build_route_file_from_edges(
+        scenario_dirs["Crowded"] / "route.rou.xml",
+        crowded_routes,
+        seed=461,
+        id_prefix="crowded2",
+    )
+    build_route_file_from_edges(
+        scenario_dirs["Normal"] / "route.rou.xml",
+        normal_routes,
+        seed=462,
+        id_prefix="normal2",
+    )
+    build_route_file_from_edges(
+        scenario_dirs["Few"] / "route.rou.xml",
+        few_routes,
+        seed=463,
+        id_prefix="few2",
+    )
+    return True
+
+
+def prepare_few_scenarios(include_two_intersection: bool = True) -> None:
     few_dir = EVALUATE_DIR / "Few"
     one_dir = EVALUATE_DIR / "OneIntersection" / "4Direction"
     few_one_dir = few_dir / "1Intersection"
-    few_two_dir = few_dir / "2Intersection"
 
     few_one_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(one_dir / "network.net.xml", few_one_dir / "network.net.xml")
@@ -477,16 +788,18 @@ def prepare_few_scenarios() -> None:
         seed=401,
     )
 
-    source_two_dir = EVALUATE_DIR / "Normal" / "2Intersection"
-    few_two_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source_two_dir / "network.net.xml", few_two_dir / "network.net.xml")
-    write_sumocfg(few_two_dir)
-    sample_existing_route_file(
-        source_two_dir / "route.rou.xml",
-        few_two_dir / "route.rou.xml",
-        vehicle_count=320,
-        seed=402,
-    )
+    if include_two_intersection:
+        few_two_dir = few_dir / "2Intersection"
+        source_two_dir = EVALUATE_DIR / "Normal" / "2Intersection"
+        few_two_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_two_dir / "network.net.xml", few_two_dir / "network.net.xml")
+        write_sumocfg(few_two_dir)
+        sample_existing_route_file(
+            source_two_dir / "route.rou.xml",
+            few_two_dir / "route.rou.xml",
+            vehicle_count=TWO_INTERSECTION_COUNTS["Few"],
+            seed=402,
+        )
 
 
 def normalize_all_route_files() -> None:
@@ -495,12 +808,20 @@ def normalize_all_route_files() -> None:
         assign_vehicle_types(route_path, seed=700 + index)
 
 
+def scenario_additional_files(target_dir: Path) -> list[str] | None:
+    # Scenario-local *.fixedtime.ttl.xml is consumed by the ATCS environment
+    # as a phase-state template, not by SUMO as an additional-file.
+    return None
+
+
 def main() -> None:
-    for network_path in [
-        EVALUATE_DIR / "Crowded" / "2Intersection" / "network.net.xml",
-        EVALUATE_DIR / "Normal" / "2Intersection" / "network.net.xml",
-    ]:
-        restyle_two_intersection_network(network_path)
+    prepared_from_standard = prepare_two_intersection_scenarios_from_standard()
+    if not prepared_from_standard:
+        for network_path in [
+            EVALUATE_DIR / "Crowded" / "2Intersection" / "network.net.xml",
+            EVALUATE_DIR / "Normal" / "2Intersection" / "network.net.xml",
+        ]:
+            restyle_two_intersection_network(network_path)
 
     for network_path in [
         EVALUATE_DIR / "Crowded" / "3Intersection" / "network.net.xml",
@@ -509,11 +830,14 @@ def main() -> None:
         restyle_three_intersection_network(network_path)
 
     prepare_one_intersection_scenarios()
-    prepare_few_scenarios()
+    prepare_few_scenarios(include_two_intersection=not prepared_from_standard)
 
     for scenario_dir in sorted(EVALUATE_DIR.glob("**")):
         if scenario_dir.is_dir() and (scenario_dir / "network.net.xml").exists():
-            write_sumocfg(scenario_dir)
+            write_sumocfg(
+                scenario_dir,
+                additional_files=scenario_additional_files(scenario_dir),
+            )
 
     normalize_all_route_files()
     print("Evaluate scenarios rebuilt successfully.")

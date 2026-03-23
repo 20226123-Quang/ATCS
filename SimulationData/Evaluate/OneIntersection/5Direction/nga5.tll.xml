@@ -1,0 +1,15 @@
+<additionals>
+    <tlLogic id="clusterJ1_J3_J5_J6_#1more" type="static" programID="0" offset="0">
+        <phase  state="GGGGGGgrrrrrgrrrrrgrrrrrgrrrrr"/>
+        <phase  state="gyyyyygrrrrrgrrrrrgrrrrrgrrrrr"/>
+        <phase  state="grrrrrGGGGGGgrrrrrgrrrrrgrrrrr"/>
+        <phase  state="grrrrrgyyyyygrrrrrgrrrrrgrrrrr"/>
+        <phase  state="grrrrrgrrrrrGGGGGGgrrrrrgrrrrr"/>
+        <phase  state="grrrrrgrrrrrgyyyyygrrrrrgrrrrr"/>
+        <phase  state="grrrrrgrrrrrgrrrrrGGGGGGgrrrrr"/>
+        <phase  state="grrrrrgrrrrrgrrrrrgyyyyygrrrrr"/>
+        <phase  state="grrrrrgrrrrrgrrrrrgrrrrrGGGGGG"/>
+        <phase  state="grrrrrgrrrrrgrrrrrgrrrrrgyyyyy"/>
+    </tlLogic>
+
+</additionals>
