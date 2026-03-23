@@ -149,6 +149,10 @@ def main() -> None:
     model_file = checkpoint_dir / f"{scenario_name}_checkpoint.pt"
     plot_file = checkpoint_dir / f"{scenario_name}_reward_plot.png"
     latest_model_file = model_file
+    mpl_config_dir = checkpoint_dir / ".mplconfig"
+    mpl_config_dir.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("MPLBACKEND", "Agg")
+    os.environ["MPLCONFIGDIR"] = str(mpl_config_dir.resolve())
 
     # Mỗi lần chạy train mới: reset CSV để không trộn nhiều run vào cùng log.
     with open(log_file, mode="w", newline="") as f:
@@ -257,22 +261,22 @@ def main() -> None:
     print(f"\nTraining complete. Model saved to {latest_model_file}")
     env.close()
 
-    # ---- Auto-evaluate với GUI sau khi training xong ----
-    print("\nLaunching GUI evaluation...")
-    evaluate_script = str(Path(__file__).resolve().parent / "evaluate.py")
-    subprocess.run(
-        [
-            sys.executable,
-            evaluate_script,
-            "--sumocfg",
-            args.sumocfg,
-            "--checkpoint",
-            str(latest_model_file),
-            "--steps",
-            str(args.steps),
-        ],
-        check=False,
-    )
+    if args.gui:
+        print("\nLaunching GUI evaluation...")
+        evaluate_script = str(Path(__file__).resolve().parent / "evaluate.py")
+        subprocess.run(
+            [
+                sys.executable,
+                evaluate_script,
+                "--sumocfg",
+                args.sumocfg,
+                "--checkpoint",
+                str(latest_model_file),
+                "--steps",
+                str(args.steps),
+            ],
+            check=False,
+        )
 
 
 if __name__ == "__main__":
