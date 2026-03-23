@@ -39,9 +39,43 @@ def _classify_phase_type(state: str) -> str:
     return "red"
 
 
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _try_relocate_sumocfg(sumocfg_path: Path) -> Path | None:
+    project_root = _repo_root()
+    parts_lower = [part.lower() for part in sumocfg_path.parts]
+
+    for anchor in ("simulationdata", "atcs"):
+        if anchor not in parts_lower:
+            continue
+        anchor_index = parts_lower.index(anchor)
+        suffix = Path(*sumocfg_path.parts[anchor_index:])
+        candidate = (project_root / suffix).resolve()
+        if candidate.exists():
+            return candidate
+
+    basename_matches = sorted(project_root.rglob(sumocfg_path.name))
+    if len(basename_matches) == 1:
+        return basename_matches[0].resolve()
+
+    return None
+
+
+def _resolve_sumocfg_path(sumocfg_path: Path) -> Path:
+    if sumocfg_path.exists():
+        return sumocfg_path
+
+    relocated = _try_relocate_sumocfg(sumocfg_path)
+    if relocated is not None:
+        return relocated
+
+    raise FileNotFoundError(f"SUMO config not found: {sumocfg_path}")
+
+
 def _resolve_net_file(sumocfg_path: Path) -> Path:
-    if not sumocfg_path.exists():
-        raise FileNotFoundError(f"SUMO config not found: {sumocfg_path}")
+    sumocfg_path = _resolve_sumocfg_path(sumocfg_path)
 
     root = ET.parse(sumocfg_path).getroot()
     net_value = None
@@ -127,7 +161,7 @@ def _extract_tls_programs(
 
 def parse_sumo_network(sumocfg_path: str, yellow_fallback_seconds: int = 3) -> ParsedSUMONetwork:
     """Parse SUMO .sumocfg and corresponding .net.xml traffic light programs."""
-    cfg_path = Path(sumocfg_path).resolve()
+    cfg_path = _resolve_sumocfg_path(Path(sumocfg_path).resolve())
     net_path = _resolve_net_file(cfg_path)
     additional_paths = _resolve_additional_files(cfg_path)
 

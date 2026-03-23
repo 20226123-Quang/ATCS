@@ -20,6 +20,7 @@ from .sumo_parser import (
     parse_sumo_network,
     PhaseDefinition,
     _classify_phase_type,
+    _resolve_sumocfg_path,
 )
 
 
@@ -49,7 +50,7 @@ class TrafficEnvironment:
         max_episode_seconds: Optional[int] = None,
         sumo_binary: Optional[str] = None,
     ) -> None:
-        self.sumocfg_path = Path(sumocfg_path).resolve()
+        self.sumocfg_path = _resolve_sumocfg_path(Path(sumocfg_path).resolve())
         self.kpi_config: KPIConfig = load_kpi_config(kpi_config_path)
         self.network: ParsedSUMONetwork = parse_sumo_network(
             str(self.sumocfg_path),
@@ -710,7 +711,7 @@ class TrafficEnvironment:
         return observation, reward, self.done, info
 
     def close(self) -> None:
-        if self.connected:
+        if getattr(self, "connected", False):
             try:
                 traci.switch(self.connection_label)
                 traci.close()
@@ -719,4 +720,7 @@ class TrafficEnvironment:
             self.connected = False
 
     def __del__(self) -> None:
-        self.close()
+        try:
+            self.close()
+        except Exception:
+            pass
