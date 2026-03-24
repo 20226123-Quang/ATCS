@@ -8,6 +8,7 @@
     <input>
         <net-file value="nga3.net.xml"/>
         <additional-files value="nga3.add.xml"/>
+        <route-files value="nga3.rou.xml"/>
     </input>
 
 </configuration>
