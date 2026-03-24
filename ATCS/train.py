@@ -140,8 +140,9 @@ def main() -> None:
     condition_name = cfg_path.parent.parent.name.lower()
     scenario_name = f"{condition_name}_{intersection_name}"
 
-    # Tạo thư mục checkpoints nếu chưa có
-    checkpoint_dir = Path("checkpoints") / scenario_name
+    # Tạo thư mục checkpoints ở repo root để mọi script dùng chung một nơi
+    repo_root = Path(__file__).resolve().parents[1]
+    checkpoint_dir = repo_root / "checkpoints" / scenario_name
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     # Khởi tạo các đường dẫn file log, model, plot
@@ -201,6 +202,8 @@ def main() -> None:
 
     if args.checkpoint:
         ckpt_path = Path(args.checkpoint)
+        if not ckpt_path.is_absolute():
+            ckpt_path = (repo_root / ckpt_path).resolve()
         if not ckpt_path.exists():
             raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
         print(f"Loading checkpoint for continued training: {ckpt_path}")

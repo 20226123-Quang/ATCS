@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -6,13 +7,14 @@ import pandas as pd
 from acac import load_scenario_config
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
 scenarios = [scenario.name for scenario in load_scenario_config() if "compare_kpi" in scenario.tags]
 
 fig, axes = plt.subplots(2, 3, figsize=(18, 10))
 axes = axes.flatten()
 
 for idx, scenario in enumerate(scenarios[: len(axes)]):
-    csv_path = os.path.join("checkpoints", scenario, f"{scenario}_training_log.csv")
+    csv_path = str(REPO_ROOT / "checkpoints" / scenario / f"{scenario}_training_log.csv")
     ax = axes[idx]
 
     if os.path.exists(csv_path):
@@ -34,7 +36,7 @@ for ax in axes[len(scenarios):]:
     ax.axis("off")
 
 plt.tight_layout()
-output_path = os.path.join("checkpoints", "critic_loss_comparison.png")
+output_path = str(REPO_ROOT / "checkpoints" / "critic_loss_comparison.png")
 plt.savefig(output_path, dpi=300)
 plt.close()
 print(f"Saved critic loss plot to: {output_path}")

@@ -145,16 +145,23 @@ def main() -> None:
 	)
 
 	# Load checkpoint
+	repo_root = Path(__file__).resolve().parents[1]
 	checkpoint_path = Path(args.checkpoint)
-	if not checkpoint_path.exists():
-		# Thử tìm trong thư mục hiện tại hoặc thư mục script
-		alt_path = Path(__file__).resolve().parent / args.checkpoint
-		if alt_path.exists():
-			checkpoint_path = alt_path
-		else:
-			print(f"[ERROR] Checkpoint not found: {args.checkpoint}")
-			print("        Please train first with: python train.py")
-			return
+	checkpoint_candidates = []
+	if checkpoint_path.is_absolute():
+		checkpoint_candidates.append(checkpoint_path)
+	else:
+		checkpoint_candidates.extend([
+			(repo_root / checkpoint_path).resolve(),
+			(Path.cwd() / checkpoint_path).resolve(),
+			(Path(__file__).resolve().parent / checkpoint_path).resolve(),
+		])
+
+	checkpoint_path = next((p for p in checkpoint_candidates if p.exists()), None)
+	if checkpoint_path is None:
+		print(f"[ERROR] Checkpoint not found: {args.checkpoint}")
+		print("        Please train first with: python train.py")
+		return
 
 	print(f"Loading checkpoint    : {checkpoint_path}")
 	trainer.load_model(str(checkpoint_path))

@@ -299,7 +299,7 @@ def main():
     )
     args = parser.parse_args()
 
-    output_dir = Path("checkpoints/compare_kpi/per_node")
+    output_dir = Path(__file__).resolve().parents[1] / "checkpoints" / "compare_kpi" / "per_node"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     base_data_dir = Path(__file__).resolve().parents[1] / "SimulationData" / "Evaluate"

@@ -285,6 +285,47 @@ python -m examples.smoke_env --steps 100 --gui
 python -m examples.smoke_env --sumocfg path/to/config.sumocfg
 ```
 
+### Train và evaluate các scenario OneIntersection mới
+```bash
+# Chạy từ repo root; checkpoint sẽ luôn nằm trong /checkpoints ở thư mục gốc
+
+# Train 3 hướng
+python ATCS/train.py \
+  --sumocfg SimulationData/Evaluate/OneIntersection/3Direction/config.sumocfg \
+  --episodes 1000 \
+  --steps 600 \
+  --device cpu
+
+# Train 4 hướng
+python ATCS/train.py \
+  --sumocfg SimulationData/Evaluate/OneIntersection/4Direction/config.sumocfg \
+  --episodes 1000 \
+  --steps 600 \
+  --device cpu
+
+# Evaluate checkpoint 3 hướng
+python ATCS/evaluate.py \
+  --sumocfg SimulationData/Evaluate/OneIntersection/3Direction/config.sumocfg \
+  --checkpoint checkpoints/oneintersection_3direction/oneintersection_3direction_checkpoint.pt \
+  --steps 600 \
+  --device cpu \
+  --no-gui
+
+# Evaluate checkpoint 4 hướng
+python ATCS/evaluate.py \
+  --sumocfg SimulationData/Evaluate/OneIntersection/4Direction/config.sumocfg \
+  --checkpoint checkpoints/oneintersection_4direction/oneintersection_4direction_checkpoint.pt \
+  --steps 600 \
+  --device cpu \
+  --no-gui
+
+# So sánh RL vs fixed-time cho 3 hướng và 4 hướng
+python ATCS/compare_kpi.py \
+  --scenarios oneintersection_3direction,oneintersection_4direction \
+  --steps 600 \
+  --device cpu
+```
+
 ### Trong code RL
 ```python
 from atcs.environment import TrafficEnvironment
