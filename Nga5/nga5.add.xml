@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-03-24 13:57:44 by Eclipse SUMO netedit Version 1.19.0
+-->
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+    <!-- Detectors -->
+    <laneAreaDetector id="e2_0" lane="E1_1" pos="180.38" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_1" lane="E1_0" pos="180.22" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_10" lane="-E4_1" pos="192.79" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_11" lane="-E4_2" pos="192.77" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_12" lane="E0_0" pos="140.42" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_13" lane="E0_2" pos="140.44" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_14" lane="E0_1" pos="140.33" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_2" lane="E1_2" pos="180.57" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_3" lane="E2_0" pos="196.60" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_4" lane="E2_1" pos="196.85" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_5" lane="E2_2" pos="197.13" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_6" lane="-E3_1" pos="149.16" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_7" lane="-E3_0" pos="148.95" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_8" lane="-E3_2" pos="149.27" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+    <laneAreaDetector id="e2_9" lane="-E4_0" pos="192.76" length="10.00" period="300.00" file="nga5_alldetectors.xml"/>
+</additional>

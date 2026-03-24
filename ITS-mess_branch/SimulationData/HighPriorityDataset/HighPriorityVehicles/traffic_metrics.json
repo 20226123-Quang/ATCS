@@ -1,0 +1,3166 @@
+{
+  "timestamp": "2025-12-23T09:40:01.281400",
+  "average_wait_time": 26.883040935672515,
+  "total_vehicles_waited": 171,
+  "average_queue_length": 8.318181818181818,
+  "max_queue_length": 20.0,
+  "queue_measurements": 22,
+  "average_travel_time": 43.7680608365019,
+  "min_travel_time": 10.0,
+  "max_travel_time": 139.0,
+  "total_vehicles_traveled": 263,
+  "wait_times_detail": [
+    {
+      "vehicle_id": "1",
+      "entry_time": 16.0,
+      "exit_time": 46.0,
+      "wait_time": 30.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "10",
+      "entry_time": 21.0,
+      "exit_time": 46.0,
+      "wait_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "16",
+      "entry_time": 28.0,
+      "exit_time": 46.0,
+      "wait_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "23",
+      "entry_time": 40.0,
+      "exit_time": 46.0,
+      "wait_time": 6.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "32",
+      "entry_time": 42.0,
+      "exit_time": 46.0,
+      "wait_time": 4.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "7",
+      "entry_time": 29.0,
+      "exit_time": 46.0,
+      "wait_time": 17.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "9",
+      "entry_time": 18.0,
+      "exit_time": 46.0,
+      "wait_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "11",
+      "entry_time": 25.0,
+      "exit_time": 49.0,
+      "wait_time": 24.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "14",
+      "entry_time": 25.0,
+      "exit_time": 49.0,
+      "wait_time": 24.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "15",
+      "entry_time": 25.0,
+      "exit_time": 49.0,
+      "wait_time": 24.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "25",
+      "entry_time": 37.0,
+      "exit_time": 52.0,
+      "wait_time": 15.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "18",
+      "entry_time": 28.0,
+      "exit_time": 57.0,
+      "wait_time": 29.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "19",
+      "entry_time": 30.0,
+      "exit_time": 60.0,
+      "wait_time": 30.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "27",
+      "entry_time": 40.0,
+      "exit_time": 91.0,
+      "wait_time": 51.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "28",
+      "entry_time": 49.0,
+      "exit_time": 91.0,
+      "wait_time": 42.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "35",
+      "entry_time": 47.0,
+      "exit_time": 91.0,
+      "wait_time": 44.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "42",
+      "entry_time": 53.0,
+      "exit_time": 91.0,
+      "wait_time": 38.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "49",
+      "entry_time": 63.0,
+      "exit_time": 91.0,
+      "wait_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "66",
+      "entry_time": 83.0,
+      "exit_time": 91.0,
+      "wait_time": 8.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "45",
+      "entry_time": 68.0,
+      "exit_time": 94.0,
+      "wait_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "51",
+      "entry_time": 63.0,
+      "exit_time": 94.0,
+      "wait_time": 31.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "57",
+      "entry_time": 71.0,
+      "exit_time": 94.0,
+      "wait_time": 23.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "72",
+      "entry_time": 82.0,
+      "exit_time": 95.0,
+      "wait_time": 13.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "63",
+      "entry_time": 89.0,
+      "exit_time": 97.0,
+      "wait_time": 8.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "64",
+      "entry_time": 78.0,
+      "exit_time": 97.0,
+      "wait_time": 19.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "50",
+      "entry_time": 74.0,
+      "exit_time": 101.0,
+      "wait_time": 27.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "75",
+      "entry_time": 88.0,
+      "exit_time": 104.0,
+      "wait_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "104",
+      "entry_time": 126.0,
+      "exit_time": 136.0,
+      "wait_time": 10.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "112",
+      "entry_time": 129.0,
+      "exit_time": 136.0,
+      "wait_time": 7.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "113",
+      "entry_time": 127.0,
+      "exit_time": 136.0,
+      "wait_time": 9.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "119",
+      "entry_time": 132.0,
+      "exit_time": 136.0,
+      "wait_time": 4.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "121",
+      "entry_time": 133.0,
+      "exit_time": 136.0,
+      "wait_time": 3.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "67",
+      "entry_time": 85.0,
+      "exit_time": 136.0,
+      "wait_time": 51.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "69",
+      "entry_time": 96.0,
+      "exit_time": 136.0,
+      "wait_time": 40.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "78",
+      "entry_time": 93.0,
+      "exit_time": 136.0,
+      "wait_time": 43.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "82",
+      "entry_time": 93.0,
+      "exit_time": 136.0,
+      "wait_time": 43.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "114",
+      "entry_time": 136.0,
+      "exit_time": 139.0,
+      "wait_time": 3.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "68",
+      "entry_time": 87.0,
+      "exit_time": 139.0,
+      "wait_time": 52.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "87",
+      "entry_time": 98.0,
+      "exit_time": 139.0,
+      "wait_time": 41.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "27",
+      "entry_time": 107.0,
+      "exit_time": 140.0,
+      "wait_time": 33.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "80",
+      "entry_time": 96.0,
+      "exit_time": 142.0,
+      "wait_time": 46.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "88",
+      "entry_time": 103.0,
+      "exit_time": 144.0,
+      "wait_time": 41.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "126",
+      "entry_time": 139.0,
+      "exit_time": 146.0,
+      "wait_time": 7.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "93",
+      "entry_time": 103.0,
+      "exit_time": 148.0,
+      "wait_time": 45.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "101",
+      "entry_time": 111.0,
+      "exit_time": 151.0,
+      "wait_time": 40.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "51",
+      "entry_time": 108.0,
+      "exit_time": 153.0,
+      "wait_time": 45.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "135",
+      "entry_time": 147.0,
+      "exit_time": 154.0,
+      "wait_time": 7.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "119",
+      "entry_time": 150.0,
+      "exit_time": 155.0,
+      "wait_time": 5.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "139",
+      "entry_time": 151.0,
+      "exit_time": 158.0,
+      "wait_time": 7.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "122",
+      "entry_time": 144.0,
+      "exit_time": 181.0,
+      "wait_time": 37.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "124",
+      "entry_time": 137.0,
+      "exit_time": 181.0,
+      "wait_time": 44.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "144",
+      "entry_time": 156.0,
+      "exit_time": 181.0,
+      "wait_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "149",
+      "entry_time": 174.0,
+      "exit_time": 181.0,
+      "wait_time": 7.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "159",
+      "entry_time": 171.0,
+      "exit_time": 181.0,
+      "wait_time": 10.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "164",
+      "entry_time": 175.0,
+      "exit_time": 181.0,
+      "wait_time": 6.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "68",
+      "entry_time": 152.0,
+      "exit_time": 181.0,
+      "wait_time": 29.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_8",
+      "entry_time": 147.0,
+      "exit_time": 181.0,
+      "wait_time": 34.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "134",
+      "entry_time": 146.0,
+      "exit_time": 184.0,
+      "wait_time": 38.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "145",
+      "entry_time": 171.0,
+      "exit_time": 184.0,
+      "wait_time": 13.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "167",
+      "entry_time": 180.0,
+      "exit_time": 184.0,
+      "wait_time": 4.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "169",
+      "entry_time": 178.0,
+      "exit_time": 184.0,
+      "wait_time": 6.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "80",
+      "entry_time": 154.0,
+      "exit_time": 184.0,
+      "wait_time": 30.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "168",
+      "entry_time": 180.0,
+      "exit_time": 185.0,
+      "wait_time": 5.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "140",
+      "entry_time": 151.0,
+      "exit_time": 187.0,
+      "wait_time": 36.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "141",
+      "entry_time": 155.0,
+      "exit_time": 189.0,
+      "wait_time": 34.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "146",
+      "entry_time": 157.0,
+      "exit_time": 191.0,
+      "wait_time": 34.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "147",
+      "entry_time": 159.0,
+      "exit_time": 193.0,
+      "wait_time": 34.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "190",
+      "entry_time": 193.0,
+      "exit_time": 203.0,
+      "wait_time": 10.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "140",
+      "entry_time": 202.0,
+      "exit_time": 226.0,
+      "wait_time": 24.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "162",
+      "entry_time": 178.0,
+      "exit_time": 226.0,
+      "wait_time": 48.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "170",
+      "entry_time": 183.0,
+      "exit_time": 226.0,
+      "wait_time": 43.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "181",
+      "entry_time": 206.0,
+      "exit_time": 226.0,
+      "wait_time": 20.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "197",
+      "entry_time": 213.0,
+      "exit_time": 226.0,
+      "wait_time": 13.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "203",
+      "entry_time": 220.0,
+      "exit_time": 226.0,
+      "wait_time": 6.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "210",
+      "entry_time": 221.0,
+      "exit_time": 226.0,
+      "wait_time": 5.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_2",
+      "entry_time": 218.0,
+      "exit_time": 226.0,
+      "wait_time": 8.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "147",
+      "entry_time": 207.0,
+      "exit_time": 229.0,
+      "wait_time": 22.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "179",
+      "entry_time": 195.0,
+      "exit_time": 229.0,
+      "wait_time": 34.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "202",
+      "entry_time": 213.0,
+      "exit_time": 229.0,
+      "wait_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "184",
+      "entry_time": 199.0,
+      "exit_time": 232.0,
+      "wait_time": 33.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "209",
+      "entry_time": 221.0,
+      "exit_time": 235.0,
+      "wait_time": 14.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "196",
+      "entry_time": 210.0,
+      "exit_time": 242.0,
+      "wait_time": 32.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "206",
+      "entry_time": 220.0,
+      "exit_time": 271.0,
+      "wait_time": 51.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "211",
+      "entry_time": 232.0,
+      "exit_time": 271.0,
+      "wait_time": 39.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "216",
+      "entry_time": 228.0,
+      "exit_time": 271.0,
+      "wait_time": 43.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "219",
+      "entry_time": 245.0,
+      "exit_time": 271.0,
+      "wait_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "226",
+      "entry_time": 237.0,
+      "exit_time": 271.0,
+      "wait_time": 34.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "236",
+      "entry_time": 247.0,
+      "exit_time": 271.0,
+      "wait_time": 24.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "257",
+      "entry_time": 268.0,
+      "exit_time": 271.0,
+      "wait_time": 3.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_6",
+      "entry_time": 230.0,
+      "exit_time": 271.0,
+      "wait_time": 41.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "213",
+      "entry_time": 225.0,
+      "exit_time": 274.0,
+      "wait_time": 49.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "218",
+      "entry_time": 231.0,
+      "exit_time": 274.0,
+      "wait_time": 43.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "225",
+      "entry_time": 239.0,
+      "exit_time": 274.0,
+      "wait_time": 35.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "248",
+      "entry_time": 259.0,
+      "exit_time": 275.0,
+      "wait_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "223",
+      "entry_time": 234.0,
+      "exit_time": 276.0,
+      "wait_time": 42.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "227",
+      "entry_time": 237.0,
+      "exit_time": 279.0,
+      "wait_time": 42.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "229",
+      "entry_time": 240.0,
+      "exit_time": 279.0,
+      "wait_time": 39.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_1",
+      "entry_time": 242.0,
+      "exit_time": 281.0,
+      "wait_time": 39.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "233",
+      "entry_time": 244.0,
+      "exit_time": 282.0,
+      "wait_time": 38.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "249",
+      "entry_time": 262.0,
+      "exit_time": 282.0,
+      "wait_time": 20.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "253",
+      "entry_time": 261.0,
+      "exit_time": 285.0,
+      "wait_time": 24.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "265",
+      "entry_time": 274.0,
+      "exit_time": 287.0,
+      "wait_time": 13.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "210",
+      "entry_time": 241.0,
+      "exit_time": 291.0,
+      "wait_time": 50.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "162",
+      "entry_time": 242.0,
+      "exit_time": 294.0,
+      "wait_time": 52.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "243",
+      "entry_time": 263.0,
+      "exit_time": 297.0,
+      "wait_time": 34.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "227",
+      "entry_time": 291.0,
+      "exit_time": 299.0,
+      "wait_time": 8.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "223",
+      "entry_time": 291.0,
+      "exit_time": 316.0,
+      "wait_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "252",
+      "entry_time": 268.0,
+      "exit_time": 316.0,
+      "wait_time": 48.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "277",
+      "entry_time": 288.0,
+      "exit_time": 316.0,
+      "wait_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "301",
+      "entry_time": 312.0,
+      "exit_time": 316.0,
+      "wait_time": 4.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "302",
+      "entry_time": 315.0,
+      "exit_time": 316.0,
+      "wait_time": 1.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_4",
+      "entry_time": 282.0,
+      "exit_time": 316.0,
+      "wait_time": 34.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "254",
+      "entry_time": 272.0,
+      "exit_time": 319.0,
+      "wait_time": 47.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "279",
+      "entry_time": 290.0,
+      "exit_time": 319.0,
+      "wait_time": 29.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "206",
+      "entry_time": 286.0,
+      "exit_time": 320.0,
+      "wait_time": 34.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "303",
+      "entry_time": 314.0,
+      "exit_time": 320.0,
+      "wait_time": 6.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "276",
+      "entry_time": 291.0,
+      "exit_time": 321.0,
+      "wait_time": 30.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "291",
+      "entry_time": 301.0,
+      "exit_time": 322.0,
+      "wait_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "278",
+      "entry_time": 293.0,
+      "exit_time": 324.0,
+      "wait_time": 31.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "295",
+      "entry_time": 304.0,
+      "exit_time": 324.0,
+      "wait_time": 20.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "283",
+      "entry_time": 296.0,
+      "exit_time": 326.0,
+      "wait_time": 30.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "299",
+      "entry_time": 314.0,
+      "exit_time": 328.0,
+      "wait_time": 14.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "300",
+      "entry_time": 315.0,
+      "exit_time": 331.0,
+      "wait_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "252",
+      "entry_time": 334.0,
+      "exit_time": 361.0,
+      "wait_time": 27.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "296",
+      "entry_time": 318.0,
+      "exit_time": 361.0,
+      "wait_time": 43.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "298",
+      "entry_time": 310.0,
+      "exit_time": 361.0,
+      "wait_time": 51.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "344",
+      "entry_time": 355.0,
+      "exit_time": 361.0,
+      "wait_time": 6.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_3",
+      "entry_time": 348.0,
+      "exit_time": 361.0,
+      "wait_time": 13.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_7",
+      "entry_time": 352.0,
+      "exit_time": 362.0,
+      "wait_time": 10.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "301",
+      "entry_time": 331.0,
+      "exit_time": 364.0,
+      "wait_time": 33.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "314",
+      "entry_time": 336.0,
+      "exit_time": 364.0,
+      "wait_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "346",
+      "entry_time": 358.0,
+      "exit_time": 364.0,
+      "wait_time": 6.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "305",
+      "entry_time": 318.0,
+      "exit_time": 365.0,
+      "wait_time": 47.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "303",
+      "entry_time": 332.0,
+      "exit_time": 367.0,
+      "wait_time": 35.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "308",
+      "entry_time": 319.0,
+      "exit_time": 367.0,
+      "wait_time": 48.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "276",
+      "entry_time": 337.0,
+      "exit_time": 369.0,
+      "wait_time": 32.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "309",
+      "entry_time": 321.0,
+      "exit_time": 369.0,
+      "wait_time": 48.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "321",
+      "entry_time": 332.0,
+      "exit_time": 371.0,
+      "wait_time": 39.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "335",
+      "entry_time": 355.0,
+      "exit_time": 371.0,
+      "wait_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "340",
+      "entry_time": 349.0,
+      "exit_time": 374.0,
+      "wait_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "353",
+      "entry_time": 361.0,
+      "exit_time": 375.0,
+      "wait_time": 14.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "348",
+      "entry_time": 360.0,
+      "exit_time": 378.0,
+      "wait_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "350",
+      "entry_time": 362.0,
+      "exit_time": 380.0,
+      "wait_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "300",
+      "entry_time": 345.0,
+      "exit_time": 383.0,
+      "wait_time": 38.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "328",
+      "entry_time": 353.0,
+      "exit_time": 386.0,
+      "wait_time": 33.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "344",
+      "entry_time": 375.0,
+      "exit_time": 389.0,
+      "wait_time": 14.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_9",
+      "entry_time": 380.0,
+      "exit_time": 391.0,
+      "wait_time": 11.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "342",
+      "entry_time": 358.0,
+      "exit_time": 406.0,
+      "wait_time": 48.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "347",
+      "entry_time": 359.0,
+      "exit_time": 406.0,
+      "wait_time": 47.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "351",
+      "entry_time": 361.0,
+      "exit_time": 406.0,
+      "wait_time": 45.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "353",
+      "entry_time": 387.0,
+      "exit_time": 406.0,
+      "wait_time": 19.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "382",
+      "entry_time": 395.0,
+      "exit_time": 406.0,
+      "wait_time": 11.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "387",
+      "entry_time": 399.0,
+      "exit_time": 406.0,
+      "wait_time": 7.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "388",
+      "entry_time": 404.0,
+      "exit_time": 406.0,
+      "wait_time": 2.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_0",
+      "entry_time": 353.0,
+      "exit_time": 406.0,
+      "wait_time": 53.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "321",
+      "entry_time": 383.0,
+      "exit_time": 409.0,
+      "wait_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "358",
+      "entry_time": 373.0,
+      "exit_time": 409.0,
+      "wait_time": 36.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "361",
+      "entry_time": 372.0,
+      "exit_time": 409.0,
+      "wait_time": 37.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "380",
+      "entry_time": 389.0,
+      "exit_time": 410.0,
+      "wait_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "340",
+      "entry_time": 386.0,
+      "exit_time": 412.0,
+      "wait_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "360",
+      "entry_time": 375.0,
+      "exit_time": 412.0,
+      "wait_time": 37.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "364",
+      "entry_time": 379.0,
+      "exit_time": 414.0,
+      "wait_time": 35.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "373",
+      "entry_time": 383.0,
+      "exit_time": 414.0,
+      "wait_time": 31.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "385",
+      "entry_time": 404.0,
+      "exit_time": 414.0,
+      "wait_time": 10.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "381",
+      "entry_time": 384.0,
+      "exit_time": 416.0,
+      "wait_time": 32.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "384",
+      "entry_time": 399.0,
+      "exit_time": 416.0,
+      "wait_time": 17.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "386",
+      "entry_time": 399.0,
+      "exit_time": 451.0,
+      "wait_time": 52.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "391",
+      "entry_time": 405.0,
+      "exit_time": 451.0,
+      "wait_time": 46.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "396",
+      "entry_time": 410.0,
+      "exit_time": 451.0,
+      "wait_time": 41.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "364",
+      "entry_time": 426.0,
+      "exit_time": 455.0,
+      "wait_time": 29.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "391",
+      "entry_time": 467.0,
+      "exit_time": 496.0,
+      "wait_time": 29.0,
+      "pcu": 1.0
+    }
+  ],
+  "queue_lengths_detail": [
+    {
+      "tls_id": "J1",
+      "time": 45.0,
+      "queue_length_pcu": 6.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 45.0,
+      "queue_length_pcu": 9.0
+    },
+    {
+      "tls_id": "J1",
+      "time": 90.0,
+      "queue_length_pcu": 6.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 90.0,
+      "queue_length_pcu": 12.0
+    },
+    {
+      "tls_id": "J1",
+      "time": 135.0,
+      "queue_length_pcu": 9.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 135.0,
+      "queue_length_pcu": 9.0
+    },
+    {
+      "tls_id": "J1",
+      "time": 180.0,
+      "queue_length_pcu": 6.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 180.0,
+      "queue_length_pcu": 14.0
+    },
+    {
+      "tls_id": "J1",
+      "time": 225.0,
+      "queue_length_pcu": 10.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 225.0,
+      "queue_length_pcu": 7.0
+    },
+    {
+      "tls_id": "J1",
+      "time": 270.0,
+      "queue_length_pcu": 10.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 270.0,
+      "queue_length_pcu": 14.0
+    },
+    {
+      "tls_id": "J1",
+      "time": 315.0,
+      "queue_length_pcu": 15.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 315.0,
+      "queue_length_pcu": 6.0
+    },
+    {
+      "tls_id": "J1",
+      "time": 360.0,
+      "queue_length_pcu": 4.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 360.0,
+      "queue_length_pcu": 20.0
+    },
+    {
+      "tls_id": "J1",
+      "time": 405.0,
+      "queue_length_pcu": 11.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 405.0,
+      "queue_length_pcu": 10.0
+    },
+    {
+      "tls_id": "J1",
+      "time": 450.0,
+      "queue_length_pcu": 1.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 450.0,
+      "queue_length_pcu": 3.0
+    },
+    {
+      "tls_id": "J1",
+      "time": 495.0,
+      "queue_length_pcu": 1.0
+    },
+    {
+      "tls_id": "J3",
+      "time": 495.0,
+      "queue_length_pcu": 0.0
+    }
+  ],
+  "travel_times_detail": [
+    {
+      "vehicle_id": "ambulance_5",
+      "entry_time": 1.0,
+      "exit_time": 18.0,
+      "travel_time": 17.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "2",
+      "entry_time": 3.0,
+      "exit_time": 19.0,
+      "travel_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "5",
+      "entry_time": 6.0,
+      "exit_time": 19.0,
+      "travel_time": 13.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "8",
+      "entry_time": 9.0,
+      "exit_time": 25.0,
+      "travel_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "20",
+      "entry_time": 21.0,
+      "exit_time": 49.0,
+      "travel_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "30",
+      "entry_time": 31.0,
+      "exit_time": 49.0,
+      "travel_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "38",
+      "entry_time": 39.0,
+      "exit_time": 50.0,
+      "travel_time": 11.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "29",
+      "entry_time": 30.0,
+      "exit_time": 52.0,
+      "travel_time": 22.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "24",
+      "entry_time": 25.0,
+      "exit_time": 54.0,
+      "travel_time": 29.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "7",
+      "entry_time": 8.0,
+      "exit_time": 55.0,
+      "travel_time": 47.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "10",
+      "entry_time": 11.0,
+      "exit_time": 55.0,
+      "travel_time": 44.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "16",
+      "entry_time": 17.0,
+      "exit_time": 55.0,
+      "travel_time": 38.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "32",
+      "entry_time": 33.0,
+      "exit_time": 55.0,
+      "travel_time": 22.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "34",
+      "entry_time": 35.0,
+      "exit_time": 56.0,
+      "travel_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "15",
+      "entry_time": 16.0,
+      "exit_time": 57.0,
+      "travel_time": 41.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "41",
+      "entry_time": 44.0,
+      "exit_time": 57.0,
+      "travel_time": 13.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "1",
+      "entry_time": 2.0,
+      "exit_time": 61.0,
+      "travel_time": 59.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "11",
+      "entry_time": 12.0,
+      "exit_time": 63.0,
+      "travel_time": 51.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "9",
+      "entry_time": 10.0,
+      "exit_time": 64.0,
+      "travel_time": 54.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "25",
+      "entry_time": 26.0,
+      "exit_time": 65.0,
+      "travel_time": 39.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "23",
+      "entry_time": 24.0,
+      "exit_time": 66.0,
+      "travel_time": 42.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "39",
+      "entry_time": 40.0,
+      "exit_time": 67.0,
+      "travel_time": 27.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "40",
+      "entry_time": 41.0,
+      "exit_time": 67.0,
+      "travel_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "14",
+      "entry_time": 15.0,
+      "exit_time": 77.0,
+      "travel_time": 62.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "47",
+      "entry_time": 49.0,
+      "exit_time": 77.0,
+      "travel_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "65",
+      "entry_time": 70.0,
+      "exit_time": 80.0,
+      "travel_time": 10.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "54",
+      "entry_time": 55.0,
+      "exit_time": 81.0,
+      "travel_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "56",
+      "entry_time": 57.0,
+      "exit_time": 83.0,
+      "travel_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "18",
+      "entry_time": 19.0,
+      "exit_time": 87.0,
+      "travel_time": 68.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "19",
+      "entry_time": 20.0,
+      "exit_time": 88.0,
+      "travel_time": 68.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "62",
+      "entry_time": 63.0,
+      "exit_time": 89.0,
+      "travel_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "60",
+      "entry_time": 61.0,
+      "exit_time": 90.0,
+      "travel_time": 29.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "59",
+      "entry_time": 60.0,
+      "exit_time": 91.0,
+      "travel_time": 31.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "61",
+      "entry_time": 62.0,
+      "exit_time": 93.0,
+      "travel_time": 31.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "53",
+      "entry_time": 54.0,
+      "exit_time": 94.0,
+      "travel_time": 40.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "66",
+      "entry_time": 70.0,
+      "exit_time": 98.0,
+      "travel_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "49",
+      "entry_time": 50.0,
+      "exit_time": 102.0,
+      "travel_time": 52.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "57",
+      "entry_time": 58.0,
+      "exit_time": 103.0,
+      "travel_time": 45.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "63",
+      "entry_time": 64.0,
+      "exit_time": 103.0,
+      "travel_time": 39.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "79",
+      "entry_time": 80.0,
+      "exit_time": 103.0,
+      "travel_time": 23.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "28",
+      "entry_time": 29.0,
+      "exit_time": 105.0,
+      "travel_time": 76.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "64",
+      "entry_time": 67.0,
+      "exit_time": 105.0,
+      "travel_time": 38.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "42",
+      "entry_time": 43.0,
+      "exit_time": 106.0,
+      "travel_time": 63.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "84",
+      "entry_time": 85.0,
+      "exit_time": 106.0,
+      "travel_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "45",
+      "entry_time": 46.0,
+      "exit_time": 107.0,
+      "travel_time": 61.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "90",
+      "entry_time": 91.0,
+      "exit_time": 107.0,
+      "travel_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "92",
+      "entry_time": 93.0,
+      "exit_time": 108.0,
+      "travel_time": 15.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "50",
+      "entry_time": 52.0,
+      "exit_time": 110.0,
+      "travel_time": 58.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "72",
+      "entry_time": 73.0,
+      "exit_time": 110.0,
+      "travel_time": 37.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "89",
+      "entry_time": 90.0,
+      "exit_time": 111.0,
+      "travel_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "95",
+      "entry_time": 96.0,
+      "exit_time": 111.0,
+      "travel_time": 15.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "75",
+      "entry_time": 76.0,
+      "exit_time": 112.0,
+      "travel_time": 36.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "35",
+      "entry_time": 36.0,
+      "exit_time": 113.0,
+      "travel_time": 77.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "86",
+      "entry_time": 87.0,
+      "exit_time": 114.0,
+      "travel_time": 27.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "81",
+      "entry_time": 83.0,
+      "exit_time": 115.0,
+      "travel_time": 32.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "98",
+      "entry_time": 99.0,
+      "exit_time": 117.0,
+      "travel_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "94",
+      "entry_time": 95.0,
+      "exit_time": 119.0,
+      "travel_time": 24.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "99",
+      "entry_time": 101.0,
+      "exit_time": 120.0,
+      "travel_time": 19.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "100",
+      "entry_time": 102.0,
+      "exit_time": 120.0,
+      "travel_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "83",
+      "entry_time": 84.0,
+      "exit_time": 123.0,
+      "travel_time": 39.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "97",
+      "entry_time": 98.0,
+      "exit_time": 123.0,
+      "travel_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "102",
+      "entry_time": 103.0,
+      "exit_time": 124.0,
+      "travel_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "107",
+      "entry_time": 108.0,
+      "exit_time": 125.0,
+      "travel_time": 17.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "96",
+      "entry_time": 97.0,
+      "exit_time": 128.0,
+      "travel_time": 31.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "106",
+      "entry_time": 108.0,
+      "exit_time": 128.0,
+      "travel_time": 20.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "104",
+      "entry_time": 105.0,
+      "exit_time": 144.0,
+      "travel_time": 39.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "112",
+      "entry_time": 113.0,
+      "exit_time": 144.0,
+      "travel_time": 31.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "121",
+      "entry_time": 123.0,
+      "exit_time": 144.0,
+      "travel_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "123",
+      "entry_time": 124.0,
+      "exit_time": 145.0,
+      "travel_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "114",
+      "entry_time": 115.0,
+      "exit_time": 146.0,
+      "travel_time": 31.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "132",
+      "entry_time": 133.0,
+      "exit_time": 147.0,
+      "travel_time": 14.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "127",
+      "entry_time": 128.0,
+      "exit_time": 148.0,
+      "travel_time": 20.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "67",
+      "entry_time": 68.0,
+      "exit_time": 149.0,
+      "travel_time": 81.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "133",
+      "entry_time": 134.0,
+      "exit_time": 149.0,
+      "travel_time": 15.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "69",
+      "entry_time": 70.0,
+      "exit_time": 151.0,
+      "travel_time": 81.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "130",
+      "entry_time": 131.0,
+      "exit_time": 151.0,
+      "travel_time": 20.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "113",
+      "entry_time": 114.0,
+      "exit_time": 152.0,
+      "travel_time": 38.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "131",
+      "entry_time": 132.0,
+      "exit_time": 153.0,
+      "travel_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "88",
+      "entry_time": 89.0,
+      "exit_time": 156.0,
+      "travel_time": 67.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "78",
+      "entry_time": 79.0,
+      "exit_time": 157.0,
+      "travel_time": 78.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "138",
+      "entry_time": 139.0,
+      "exit_time": 158.0,
+      "travel_time": 19.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "27",
+      "entry_time": 28.0,
+      "exit_time": 159.0,
+      "travel_time": 131.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "51",
+      "entry_time": 52.0,
+      "exit_time": 161.0,
+      "travel_time": 109.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "82",
+      "entry_time": 83.0,
+      "exit_time": 165.0,
+      "travel_time": 82.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "126",
+      "entry_time": 127.0,
+      "exit_time": 165.0,
+      "travel_time": 38.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "143",
+      "entry_time": 144.0,
+      "exit_time": 167.0,
+      "travel_time": 23.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "87",
+      "entry_time": 88.0,
+      "exit_time": 168.0,
+      "travel_time": 80.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "142",
+      "entry_time": 143.0,
+      "exit_time": 168.0,
+      "travel_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "154",
+      "entry_time": 155.0,
+      "exit_time": 170.0,
+      "travel_time": 15.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "152",
+      "entry_time": 153.0,
+      "exit_time": 172.0,
+      "travel_time": 19.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "119",
+      "entry_time": 120.0,
+      "exit_time": 173.0,
+      "travel_time": 53.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "135",
+      "entry_time": 136.0,
+      "exit_time": 173.0,
+      "travel_time": 37.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "93",
+      "entry_time": 94.0,
+      "exit_time": 174.0,
+      "travel_time": 80.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "101",
+      "entry_time": 102.0,
+      "exit_time": 175.0,
+      "travel_time": 73.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "139",
+      "entry_time": 140.0,
+      "exit_time": 175.0,
+      "travel_time": 35.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "151",
+      "entry_time": 152.0,
+      "exit_time": 178.0,
+      "travel_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "166",
+      "entry_time": 169.0,
+      "exit_time": 186.0,
+      "travel_time": 17.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "149",
+      "entry_time": 150.0,
+      "exit_time": 189.0,
+      "travel_time": 39.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "144",
+      "entry_time": 146.0,
+      "exit_time": 190.0,
+      "travel_time": 44.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "164",
+      "entry_time": 165.0,
+      "exit_time": 191.0,
+      "travel_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "165",
+      "entry_time": 168.0,
+      "exit_time": 191.0,
+      "travel_time": 23.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "68",
+      "entry_time": 71.0,
+      "exit_time": 192.0,
+      "travel_time": 121.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "169",
+      "entry_time": 170.0,
+      "exit_time": 192.0,
+      "travel_time": 22.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "167",
+      "entry_time": 170.0,
+      "exit_time": 193.0,
+      "travel_time": 23.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_8",
+      "entry_time": 137.0,
+      "exit_time": 194.0,
+      "travel_time": 57.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "145",
+      "entry_time": 146.0,
+      "exit_time": 194.0,
+      "travel_time": 48.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "134",
+      "entry_time": 135.0,
+      "exit_time": 196.0,
+      "travel_time": 61.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "124",
+      "entry_time": 125.0,
+      "exit_time": 201.0,
+      "travel_time": 76.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "186",
+      "entry_time": 187.0,
+      "exit_time": 203.0,
+      "travel_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "141",
+      "entry_time": 143.0,
+      "exit_time": 205.0,
+      "travel_time": 62.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "159",
+      "entry_time": 160.0,
+      "exit_time": 206.0,
+      "travel_time": 46.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "192",
+      "entry_time": 193.0,
+      "exit_time": 207.0,
+      "travel_time": 14.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "187",
+      "entry_time": 194.0,
+      "exit_time": 207.0,
+      "travel_time": 13.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "146",
+      "entry_time": 147.0,
+      "exit_time": 209.0,
+      "travel_time": 62.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "168",
+      "entry_time": 169.0,
+      "exit_time": 210.0,
+      "travel_time": 41.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "180",
+      "entry_time": 181.0,
+      "exit_time": 211.0,
+      "travel_time": 30.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "122",
+      "entry_time": 123.0,
+      "exit_time": 213.0,
+      "travel_time": 90.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "193",
+      "entry_time": 194.0,
+      "exit_time": 214.0,
+      "travel_time": 20.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "80",
+      "entry_time": 81.0,
+      "exit_time": 215.0,
+      "travel_time": 134.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "188",
+      "entry_time": 190.0,
+      "exit_time": 216.0,
+      "travel_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "190",
+      "entry_time": 191.0,
+      "exit_time": 219.0,
+      "travel_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "200",
+      "entry_time": 201.0,
+      "exit_time": 220.0,
+      "travel_time": 19.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "205",
+      "entry_time": 206.0,
+      "exit_time": 221.0,
+      "travel_time": 15.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "194",
+      "entry_time": 195.0,
+      "exit_time": 224.0,
+      "travel_time": 29.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "208",
+      "entry_time": 209.0,
+      "exit_time": 227.0,
+      "travel_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_2",
+      "entry_time": 202.0,
+      "exit_time": 232.0,
+      "travel_time": 30.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "203",
+      "entry_time": 204.0,
+      "exit_time": 233.0,
+      "travel_time": 29.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "204",
+      "entry_time": 205.0,
+      "exit_time": 233.0,
+      "travel_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "212",
+      "entry_time": 214.0,
+      "exit_time": 235.0,
+      "travel_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "217",
+      "entry_time": 218.0,
+      "exit_time": 236.0,
+      "travel_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "221",
+      "entry_time": 222.0,
+      "exit_time": 236.0,
+      "travel_time": 14.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "214",
+      "entry_time": 215.0,
+      "exit_time": 237.0,
+      "travel_time": 22.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "197",
+      "entry_time": 198.0,
+      "exit_time": 239.0,
+      "travel_time": 41.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "140",
+      "entry_time": 141.0,
+      "exit_time": 241.0,
+      "travel_time": 100.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "181",
+      "entry_time": 182.0,
+      "exit_time": 246.0,
+      "travel_time": 64.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "179",
+      "entry_time": 180.0,
+      "exit_time": 247.0,
+      "travel_time": 67.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "209",
+      "entry_time": 210.0,
+      "exit_time": 247.0,
+      "travel_time": 37.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "147",
+      "entry_time": 148.0,
+      "exit_time": 249.0,
+      "travel_time": 101.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "184",
+      "entry_time": 185.0,
+      "exit_time": 251.0,
+      "travel_time": 66.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "196",
+      "entry_time": 197.0,
+      "exit_time": 251.0,
+      "travel_time": 54.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "231",
+      "entry_time": 232.0,
+      "exit_time": 251.0,
+      "travel_time": 19.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "215",
+      "entry_time": 216.0,
+      "exit_time": 252.0,
+      "travel_time": 36.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "170",
+      "entry_time": 173.0,
+      "exit_time": 254.0,
+      "travel_time": 81.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "202",
+      "entry_time": 203.0,
+      "exit_time": 255.0,
+      "travel_time": 52.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "239",
+      "entry_time": 240.0,
+      "exit_time": 256.0,
+      "travel_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "224",
+      "entry_time": 225.0,
+      "exit_time": 257.0,
+      "travel_time": 32.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "228",
+      "entry_time": 229.0,
+      "exit_time": 260.0,
+      "travel_time": 31.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "230",
+      "entry_time": 231.0,
+      "exit_time": 261.0,
+      "travel_time": 30.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "232",
+      "entry_time": 233.0,
+      "exit_time": 261.0,
+      "travel_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "237",
+      "entry_time": 238.0,
+      "exit_time": 264.0,
+      "travel_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "245",
+      "entry_time": 246.0,
+      "exit_time": 267.0,
+      "travel_time": 21.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "250",
+      "entry_time": 251.0,
+      "exit_time": 269.0,
+      "travel_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "244",
+      "entry_time": 245.0,
+      "exit_time": 270.0,
+      "travel_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "258",
+      "entry_time": 262.0,
+      "exit_time": 272.0,
+      "travel_time": 10.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "259",
+      "entry_time": 260.0,
+      "exit_time": 279.0,
+      "travel_time": 19.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "226",
+      "entry_time": 227.0,
+      "exit_time": 280.0,
+      "travel_time": 53.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "257",
+      "entry_time": 258.0,
+      "exit_time": 280.0,
+      "travel_time": 22.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "219",
+      "entry_time": 220.0,
+      "exit_time": 281.0,
+      "travel_time": 61.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_6",
+      "entry_time": 221.0,
+      "exit_time": 282.0,
+      "travel_time": 61.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "268",
+      "entry_time": 269.0,
+      "exit_time": 283.0,
+      "travel_time": 14.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "273",
+      "entry_time": 274.0,
+      "exit_time": 285.0,
+      "travel_time": 11.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "213",
+      "entry_time": 214.0,
+      "exit_time": 288.0,
+      "travel_time": 74.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "236",
+      "entry_time": 237.0,
+      "exit_time": 291.0,
+      "travel_time": 54.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "248",
+      "entry_time": 249.0,
+      "exit_time": 293.0,
+      "travel_time": 44.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "275",
+      "entry_time": 276.0,
+      "exit_time": 293.0,
+      "travel_time": 17.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "211",
+      "entry_time": 212.0,
+      "exit_time": 295.0,
+      "travel_time": 83.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "269",
+      "entry_time": 270.0,
+      "exit_time": 295.0,
+      "travel_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "216",
+      "entry_time": 217.0,
+      "exit_time": 296.0,
+      "travel_time": 79.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "280",
+      "entry_time": 281.0,
+      "exit_time": 296.0,
+      "travel_time": 15.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "218",
+      "entry_time": 219.0,
+      "exit_time": 297.0,
+      "travel_time": 78.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "225",
+      "entry_time": 226.0,
+      "exit_time": 297.0,
+      "travel_time": 71.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "249",
+      "entry_time": 250.0,
+      "exit_time": 297.0,
+      "travel_time": 47.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "229",
+      "entry_time": 230.0,
+      "exit_time": 298.0,
+      "travel_time": 68.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "282",
+      "entry_time": 283.0,
+      "exit_time": 298.0,
+      "travel_time": 15.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "210",
+      "entry_time": 211.0,
+      "exit_time": 300.0,
+      "travel_time": 89.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "162",
+      "entry_time": 163.0,
+      "exit_time": 302.0,
+      "travel_time": 139.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "253",
+      "entry_time": 254.0,
+      "exit_time": 304.0,
+      "travel_time": 50.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "243",
+      "entry_time": 244.0,
+      "exit_time": 305.0,
+      "travel_time": 61.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "286",
+      "entry_time": 287.0,
+      "exit_time": 305.0,
+      "travel_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "227",
+      "entry_time": 228.0,
+      "exit_time": 308.0,
+      "travel_time": 80.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "281",
+      "entry_time": 282.0,
+      "exit_time": 309.0,
+      "travel_time": 27.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "233",
+      "entry_time": 234.0,
+      "exit_time": 310.0,
+      "travel_time": 76.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "265",
+      "entry_time": 266.0,
+      "exit_time": 313.0,
+      "travel_time": 47.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "289",
+      "entry_time": 290.0,
+      "exit_time": 318.0,
+      "travel_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_1",
+      "entry_time": 235.0,
+      "exit_time": 319.0,
+      "travel_time": 84.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "274",
+      "entry_time": 275.0,
+      "exit_time": 322.0,
+      "travel_time": 47.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "310",
+      "entry_time": 311.0,
+      "exit_time": 322.0,
+      "travel_time": 11.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "302",
+      "entry_time": 303.0,
+      "exit_time": 323.0,
+      "travel_time": 20.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_4",
+      "entry_time": 267.0,
+      "exit_time": 326.0,
+      "travel_time": 59.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "316",
+      "entry_time": 317.0,
+      "exit_time": 328.0,
+      "travel_time": 11.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "312",
+      "entry_time": 313.0,
+      "exit_time": 329.0,
+      "travel_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "206",
+      "entry_time": 207.0,
+      "exit_time": 332.0,
+      "travel_time": 125.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "313",
+      "entry_time": 314.0,
+      "exit_time": 333.0,
+      "travel_time": 19.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "254",
+      "entry_time": 255.0,
+      "exit_time": 336.0,
+      "travel_time": 81.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "317",
+      "entry_time": 318.0,
+      "exit_time": 336.0,
+      "travel_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "279",
+      "entry_time": 280.0,
+      "exit_time": 338.0,
+      "travel_time": 58.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "291",
+      "entry_time": 292.0,
+      "exit_time": 338.0,
+      "travel_time": 46.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "326",
+      "entry_time": 327.0,
+      "exit_time": 340.0,
+      "travel_time": 13.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "223",
+      "entry_time": 224.0,
+      "exit_time": 342.0,
+      "travel_time": 118.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "277",
+      "entry_time": 278.0,
+      "exit_time": 345.0,
+      "travel_time": 67.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "278",
+      "entry_time": 279.0,
+      "exit_time": 345.0,
+      "travel_time": 66.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "324",
+      "entry_time": 325.0,
+      "exit_time": 347.0,
+      "travel_time": 22.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "283",
+      "entry_time": 284.0,
+      "exit_time": 349.0,
+      "travel_time": 65.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "295",
+      "entry_time": 296.0,
+      "exit_time": 349.0,
+      "travel_time": 53.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "319",
+      "entry_time": 320.0,
+      "exit_time": 349.0,
+      "travel_time": 29.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "299",
+      "entry_time": 300.0,
+      "exit_time": 352.0,
+      "travel_time": 52.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "323",
+      "entry_time": 324.0,
+      "exit_time": 352.0,
+      "travel_time": 28.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "330",
+      "entry_time": 331.0,
+      "exit_time": 356.0,
+      "travel_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "332",
+      "entry_time": 333.0,
+      "exit_time": 357.0,
+      "travel_time": 24.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "339",
+      "entry_time": 340.0,
+      "exit_time": 358.0,
+      "travel_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "337",
+      "entry_time": 338.0,
+      "exit_time": 363.0,
+      "travel_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "354",
+      "entry_time": 355.0,
+      "exit_time": 366.0,
+      "travel_time": 11.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "296",
+      "entry_time": 297.0,
+      "exit_time": 371.0,
+      "travel_time": 74.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "355",
+      "entry_time": 356.0,
+      "exit_time": 372.0,
+      "travel_time": 16.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "301",
+      "entry_time": 302.0,
+      "exit_time": 373.0,
+      "travel_time": 71.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "303",
+      "entry_time": 305.0,
+      "exit_time": 375.0,
+      "travel_time": 70.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "276",
+      "entry_time": 277.0,
+      "exit_time": 377.0,
+      "travel_time": 100.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "335",
+      "entry_time": 336.0,
+      "exit_time": 379.0,
+      "travel_time": 43.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "359",
+      "entry_time": 360.0,
+      "exit_time": 379.0,
+      "travel_time": 19.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_3",
+      "entry_time": 339.0,
+      "exit_time": 380.0,
+      "travel_time": 41.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_7",
+      "entry_time": 344.0,
+      "exit_time": 380.0,
+      "travel_time": 36.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "362",
+      "entry_time": 363.0,
+      "exit_time": 381.0,
+      "travel_time": 18.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "346",
+      "entry_time": 347.0,
+      "exit_time": 383.0,
+      "travel_time": 36.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "298",
+      "entry_time": 299.0,
+      "exit_time": 384.0,
+      "travel_time": 85.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "348",
+      "entry_time": 349.0,
+      "exit_time": 386.0,
+      "travel_time": 37.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "305",
+      "entry_time": 306.0,
+      "exit_time": 387.0,
+      "travel_time": 81.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "252",
+      "entry_time": 253.0,
+      "exit_time": 388.0,
+      "travel_time": 135.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "350",
+      "entry_time": 351.0,
+      "exit_time": 388.0,
+      "travel_time": 37.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "374",
+      "entry_time": 375.0,
+      "exit_time": 388.0,
+      "travel_time": 13.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "308",
+      "entry_time": 309.0,
+      "exit_time": 390.0,
+      "travel_time": 81.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "314",
+      "entry_time": 315.0,
+      "exit_time": 390.0,
+      "travel_time": 75.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "309",
+      "entry_time": 310.0,
+      "exit_time": 392.0,
+      "travel_time": 82.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "300",
+      "entry_time": 303.0,
+      "exit_time": 393.0,
+      "travel_time": 90.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "328",
+      "entry_time": 329.0,
+      "exit_time": 395.0,
+      "travel_time": 66.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "369",
+      "entry_time": 370.0,
+      "exit_time": 395.0,
+      "travel_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "344",
+      "entry_time": 345.0,
+      "exit_time": 397.0,
+      "travel_time": 52.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "363",
+      "entry_time": 364.0,
+      "exit_time": 397.0,
+      "travel_time": 33.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_9",
+      "entry_time": 366.0,
+      "exit_time": 398.0,
+      "travel_time": 32.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "377",
+      "entry_time": 378.0,
+      "exit_time": 401.0,
+      "travel_time": 23.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "383",
+      "entry_time": 384.0,
+      "exit_time": 410.0,
+      "travel_time": 26.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "388",
+      "entry_time": 389.0,
+      "exit_time": 414.0,
+      "travel_time": 25.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "382",
+      "entry_time": 383.0,
+      "exit_time": 415.0,
+      "travel_time": 32.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "347",
+      "entry_time": 348.0,
+      "exit_time": 416.0,
+      "travel_time": 68.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "387",
+      "entry_time": 389.0,
+      "exit_time": 416.0,
+      "travel_time": 27.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "ambulance_0",
+      "entry_time": 334.0,
+      "exit_time": 417.0,
+      "travel_time": 83.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "380",
+      "entry_time": 381.0,
+      "exit_time": 418.0,
+      "travel_time": 37.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "342",
+      "entry_time": 343.0,
+      "exit_time": 419.0,
+      "travel_time": 76.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "321",
+      "entry_time": 322.0,
+      "exit_time": 421.0,
+      "travel_time": 99.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "351",
+      "entry_time": 352.0,
+      "exit_time": 421.0,
+      "travel_time": 69.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "399",
+      "entry_time": 400.0,
+      "exit_time": 422.0,
+      "travel_time": 22.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "340",
+      "entry_time": 341.0,
+      "exit_time": 423.0,
+      "travel_time": 82.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "358",
+      "entry_time": 359.0,
+      "exit_time": 423.0,
+      "travel_time": 64.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "398",
+      "entry_time": 399.0,
+      "exit_time": 423.0,
+      "travel_time": 24.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "385",
+      "entry_time": 386.0,
+      "exit_time": 426.0,
+      "travel_time": 40.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "353",
+      "entry_time": 354.0,
+      "exit_time": 427.0,
+      "travel_time": 73.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "360",
+      "entry_time": 361.0,
+      "exit_time": 429.0,
+      "travel_time": 68.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "361",
+      "entry_time": 362.0,
+      "exit_time": 432.0,
+      "travel_time": 70.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "373",
+      "entry_time": 374.0,
+      "exit_time": 434.0,
+      "travel_time": 60.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "381",
+      "entry_time": 382.0,
+      "exit_time": 439.0,
+      "travel_time": 57.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "384",
+      "entry_time": 385.0,
+      "exit_time": 439.0,
+      "travel_time": 54.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "386",
+      "entry_time": 387.0,
+      "exit_time": 460.0,
+      "travel_time": 73.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "396",
+      "entry_time": 397.0,
+      "exit_time": 461.0,
+      "travel_time": 64.0,
+      "pcu": 1.0
+    },
+    {
+      "vehicle_id": "364",
+      "entry_time": 365.0,
+      "exit_time": 464.0,
+      "travel_time": 99.0,
+      "pcu": 1.0
+    }
+  ]
+}

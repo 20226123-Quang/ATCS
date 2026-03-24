@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-03-24 09:56:34 by Eclipse SUMO netedit Version 1.19.0
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/neteditConfiguration.xsd">
+
+    <input>
+        <sumo-net-file value="D:\Elcom\ATCS\SUMO\ATCS\Nga5\nga5.net.xml"/>
+    </input>
+
+    <processing>
+        <geometry.min-radius.fix.railways value="false"/>
+        <geometry.max-grade.fix value="false"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="0"/>
+    </processing>
+
+    <junctions>
+        <no-turnarounds value="true"/>
+        <junctions.corner-detail value="5"/>
+        <junctions.limit-turn-speed value="5.50"/>
+        <rectangular-lane-cut value="0"/>
+    </junctions>
+
+    <pedestrian>
+        <walkingareas value="0"/>
+    </pedestrian>
+
+</configuration>
+-->
+
+<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+    <tlLogic id="clusterJ1_J3_J5_J6_#1more" type="static" programID="0" offset="0">
+        <phase duration="20" state="GGGGGGgrrrrrgrrrrrgrrrrrgrrrrr"/>
+        <phase duration="3" state="gyyyyygrrrrrgrrrrrgrrrrrgrrrrr"/>
+        <phase duration="20" state="grrrrrGGGGGGgrrrrrgrrrrrgrrrrr"/>
+        <phase duration="3" state="grrrrrgyyyyygrrrrrgrrrrrgrrrrr"/>
+        <phase duration="20" state="grrrrrgrrrrrGGGGGGgrrrrrgrrrrr"/>
+        <phase duration="3" state="grrrrrgrrrrrgyyyyygrrrrrgrrrrr"/>
+        <phase duration="20" state="grrrrrgrrrrrgrrrrrGGGGGGgrrrrr"/>
+        <phase duration="3" state="grrrrrgrrrrrgrrrrrgyyyyygrrrrr"/>
+        <phase duration="20" state="grrrrrgrrrrrgrrrrrgrrrrrGGGGGG"/>
+        <phase duration="3" state="grrrrrgrrrrrgrrrrrgrrrrrgyyyyy"/>
+    </tlLogic>
+</additional>
