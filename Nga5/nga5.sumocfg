@@ -8,6 +8,7 @@
     <input>
         <net-file value="nga5.net.xml"/>
         <additional-files value="nga5.add.xml"/>
+        <route-files value="5route.rou.xml"/>
     </input>
 
 </configuration>
