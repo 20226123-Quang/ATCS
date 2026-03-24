@@ -57,6 +57,9 @@ class ACACTrainer:
         self.reward_delay_weight = _cfg.training.reward_delay_weight
         self.reward_queue_weight = _cfg.training.reward_queue_weight
         self.reward_saturation_weight = _cfg.training.reward_saturation_weight
+        self.reward_split_failure_weight = _cfg.training.reward_split_failure_weight
+        self.reward_starvation_weight = _cfg.training.reward_starvation_weight
+        self.reward_fairness_weight = _cfg.training.reward_fairness_weight
         self.device = device
 
         # ===== Book-keeping =====
@@ -84,26 +87,51 @@ class ACACTrainer:
             obs[tls_index].flatten(), dtype=torch.float32, device=self.device
         )
 
-    def _global_reward_scalar(self, reward):
-        # reward[:, :, 0] = -wait/delay, reward[:, :, 1] = -queue length,
-        # reward[:, :, 2] = -degree of saturation
-        delay_term = float(reward[:, :, 0].mean())
-        queue_term = float(reward[:, :, 1].mean())
-        saturation_term = float(reward[:, :, 2].mean()) if reward.shape[-1] > 2 else 0.0
+    def _lane_mask_tensor(self, env, reward):
+        reward_tensor = torch.as_tensor(reward, dtype=torch.float32, device=self.device)
+        mask = torch.zeros(reward_tensor.shape[:2], dtype=torch.float32, device=self.device)
+        if env is None:
+            mask.fill_(1.0)
+            return mask
 
-        weight_sum = (
-            abs(self.reward_delay_weight)
-            + abs(self.reward_queue_weight)
-            + abs(self.reward_saturation_weight)
-        )
+        for tls_index, tls_id in enumerate(env.tls_ids):
+            lane_count = len(env.lanes_by_tls.get(tls_id, []))
+            if lane_count > 0:
+                mask[tls_index, :lane_count] = 1.0
+        return mask
+
+    @staticmethod
+    def _masked_mean(values, lane_mask):
+        denom = lane_mask.sum().clamp_min(1.0)
+        return (values * lane_mask).sum() / denom
+
+    def _global_reward_scalar(self, reward, env=None):
+        reward_tensor = torch.as_tensor(reward, dtype=torch.float32, device=self.device)
+        lane_mask = self._lane_mask_tensor(env, reward_tensor)
+
+        weighted_terms = []
+        channel_weights = [
+            self.reward_delay_weight,
+            self.reward_queue_weight,
+            self.reward_saturation_weight,
+            self.reward_split_failure_weight,
+            self.reward_starvation_weight,
+            self.reward_fairness_weight,
+        ]
+        for channel_index, weight in enumerate(channel_weights):
+            if channel_index >= reward_tensor.shape[-1]:
+                continue
+            term_value = self._masked_mean(reward_tensor[:, :, channel_index], lane_mask)
+            weighted_terms.append((weight, term_value))
+
+        if not weighted_terms:
+            return 0.0
+
+        weight_sum = sum(abs(weight) for weight, _ in weighted_terms)
         if weight_sum <= 1e-8:
-            return float(delay_term + queue_term + saturation_term)
+            return float(sum(float(term) for _, term in weighted_terms))
 
-        weighted = (
-            self.reward_delay_weight * delay_term
-            + self.reward_queue_weight * queue_term
-            + self.reward_saturation_weight * saturation_term
-        )
+        weighted = sum(weight * term for weight, term in weighted_terms)
         return float(weighted / weight_sum)
 
     def _scale_action(self, actor_output, min_ext, max_ext):
@@ -197,7 +225,7 @@ class ACACTrainer:
                 {
                     "t": t,
                     "global_h": self._get_current_global_state().detach(),
-                    "reward": self._global_reward_scalar(reward),
+                    "reward": self._global_reward_scalar(reward, env),
                 }
             )
 
@@ -208,7 +236,7 @@ class ACACTrainer:
     # Evaluation
     # =====================================================================
 
-    def evaluate_model(self, env, max_steps=1000):
+    def evaluate_model(self, env, max_steps=1000, deterministic=True):
         """
         Đánh giá model không lưu buffer.
         Returns: {"total_reward": float, "avg_reward": float}
@@ -219,6 +247,7 @@ class ACACTrainer:
         total_reward = 0.0
         total_delay = 0.0
         total_queue = 0.0
+        total_saturation_norm = 0.0
 
         while not done and t < max_steps:
             requiring = info["intersection_require_action"]
@@ -242,16 +271,25 @@ class ACACTrainer:
                 h_prev = self.hidden_states[i].unsqueeze(0)
                 self.hidden_states[i] = self.encoders[i](z_it, p_it, h_prev).squeeze(0)
 
-                actor_out, _ = self.actors[i].sample(self.hidden_states[i].unsqueeze(0))
+                actor_out = self.actors[i].act(
+                    self.hidden_states[i].unsqueeze(0), deterministic=deterministic
+                )
                 actor_val = float(actor_out.detach().item())
                 action_dict[name] = self._scale_action(
                     actor_val, eff_range[0], eff_range[1]
                 )
 
             next_obs, reward, done, info = env.step(action_dict)
-            total_delay += reward[:, :, 0].mean()
-            total_queue += reward[:, :, 1].mean()
-            total_reward += self._global_reward_scalar(reward)
+            reward_tensor = torch.as_tensor(reward, dtype=torch.float32, device=self.device)
+            lane_mask = self._lane_mask_tensor(env, reward_tensor)
+            total_delay += -float(self._masked_mean(reward_tensor[:, :, 0], lane_mask))
+            total_queue += -float(self._masked_mean(reward_tensor[:, :, 1], lane_mask))
+            total_saturation_norm += (
+                -float(self._masked_mean(reward_tensor[:, :, 2], lane_mask))
+                if reward_tensor.shape[-1] > 2
+                else 0.0
+            )
+            total_reward += self._global_reward_scalar(reward_tensor, env)
             obs = next_obs
             t += info["delta_t"]
 
@@ -260,6 +298,7 @@ class ACACTrainer:
             "avg_reward": total_reward / max(t, 1),
             "delay": total_delay / max(t, 1),
             "queue": total_queue / max(t, 1),
+            "saturation_norm": total_saturation_norm / max(t, 1),
         }
 
     # =====================================================================

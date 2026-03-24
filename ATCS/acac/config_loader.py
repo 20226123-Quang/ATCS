@@ -1,4 +1,4 @@
-"""Load and validate model configuration for ACAC."""
+"""Load and validate model and scenario configuration for ACAC."""
 
 from __future__ import annotations
 
@@ -29,11 +29,14 @@ class TrainingSettings:
     lam: float
     eps_clip: float
     eps: float
-    vf_coef: float  # c1: value function loss coefficient
-    ent_coef: float  # c2: entropy bonus coefficient
+    vf_coef: float
+    ent_coef: float
     reward_delay_weight: float
     reward_queue_weight: float
     reward_saturation_weight: float
+    reward_split_failure_weight: float
+    reward_starvation_weight: float
+    reward_fairness_weight: float
 
 
 @dataclass(frozen=True)
@@ -43,8 +46,32 @@ class ModelConfig:
     training: TrainingSettings
 
 
+@dataclass(frozen=True)
+class ScenarioConfig:
+    name: str
+    sumocfg_path: Path
+    checkpoint_path: Path
+    tags: tuple[str, ...]
+    enabled: bool
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
 def _default_config_path() -> Path:
     return Path(__file__).resolve().parents[1] / "config" / "model_config.json"
+
+
+def _default_scenario_config_path() -> Path:
+    return Path(__file__).resolve().parents[1] / "config" / "scenario_config.json"
+
+
+def _resolve_repo_path(raw_path: str) -> Path:
+    path = Path(raw_path)
+    if path.is_absolute():
+        return path.resolve()
+    return (_repo_root() / path).resolve()
 
 
 def load_model_config(config_path: Optional[str] = None) -> ModelConfig:
@@ -82,6 +109,45 @@ def load_model_config(config_path: Optional[str] = None) -> ModelConfig:
         reward_delay_weight=float(t.get("reward_delay_weight", 1.0)),
         reward_queue_weight=float(t.get("reward_queue_weight", 0.2)),
         reward_saturation_weight=float(t.get("reward_saturation_weight", 0.1)),
+        reward_split_failure_weight=float(t.get("reward_split_failure_weight", 0.75)),
+        reward_starvation_weight=float(t.get("reward_starvation_weight", 0.5)),
+        reward_fairness_weight=float(t.get("reward_fairness_weight", 0.5)),
     )
 
     return ModelConfig(path=path, model=model, training=training)
+
+
+def load_scenario_config(
+    config_path: Optional[str] = None,
+    only_enabled: bool = True,
+) -> list[ScenarioConfig]:
+    """Load scenario registry and resolve paths relative to the repository root."""
+    path = Path(config_path) if config_path else _default_scenario_config_path()
+    if not path.exists():
+        raise FileNotFoundError(f"Scenario config not found: {path}")
+
+    with path.open("r", encoding="utf-8") as f:
+        raw = json.load(f)
+
+    scenarios: list[ScenarioConfig] = []
+    for item in raw.get("scenarios", []):
+        enabled = bool(item.get("enabled", True))
+        if only_enabled and not enabled:
+            continue
+
+        name = str(item["name"]).strip()
+        sumocfg_path = _resolve_repo_path(str(item["sumocfg"]))
+        checkpoint_path = _resolve_repo_path(str(item["checkpoint"]))
+        tags = tuple(str(tag).strip() for tag in item.get("tags", []))
+
+        scenarios.append(
+            ScenarioConfig(
+                name=name,
+                sumocfg_path=sumocfg_path,
+                checkpoint_path=checkpoint_path,
+                tags=tags,
+                enabled=enabled,
+            )
+        )
+
+    return scenarios

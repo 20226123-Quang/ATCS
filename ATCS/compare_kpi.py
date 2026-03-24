@@ -18,6 +18,7 @@ from acac import (
     SinusoidalPositionalEncoding,
     SyncTrajectoryBuffer,
     load_model_config,
+    load_scenario_config,
 )
 from atcs.environment import TrafficEnvironment
 
@@ -325,7 +326,9 @@ def run_acac_episode(env, trainer, max_steps, sat_clip_max):
             p_it = trainer.time_encoder(t).to(trainer.device).unsqueeze(0)
             h_prev = trainer.hidden_states[i].unsqueeze(0)
             trainer.hidden_states[i] = trainer.encoders[i](z_it, p_it, h_prev).squeeze(0)
-            actor_out, _ = trainer.actors[i].sample(trainer.hidden_states[i].unsqueeze(0))
+            actor_out = trainer.actors[i].act(
+                trainer.hidden_states[i].unsqueeze(0), deterministic=True
+            )
             actor_val = float(actor_out.detach().item())
             action_dict[name] = trainer._scale_action(actor_val, eff_range[0], eff_range[1])
 
@@ -400,7 +403,7 @@ def plot_comparison(
     comparison = _build_comparison(scenario_name, acac_summary, fixed_summary)
 
     metric_specs = [
-        ("Wait Time", "delay", "Average Wait Time (s)"),
+        ("Control Delay", "delay", "Average Control Delay (s)"),
         ("Queue Length", "queue", "Average Queue Length (m)"),
         (
             f"Saturation (Norm, clip={sat_clip_max:g})",
@@ -442,7 +445,7 @@ def plot_comparison(
     plt.close(fig)
 
     print(
-        f"[{scenario_name}] Wait improvement: {comparison['improve_delay_pct']:.2f}% | "
+        f"[{scenario_name}] Control-delay improvement: {comparison['improve_delay_pct']:.2f}% | "
         f"Queue improvement: {comparison['improve_queue_pct']:.2f}% | "
         f"Sat(norm) improvement: {comparison['improve_sat_norm_pct']:.2f}% | "
         f"Directional fairness improvement: "
@@ -475,7 +478,7 @@ def plot_multi_scenario_3kpi(results, output_dir, total_steps_count, sat_clip_ma
     width = 0.35
 
     metric_specs = [
-        ("Wait Time", "fixed_delay", "rl_delay", "Average Wait Time (s)"),
+        ("Control Delay", "fixed_delay", "rl_delay", "Average Control Delay (s)"),
         ("Queue Length", "fixed_queue", "rl_queue", "Average Queue Length (m)"),
         (
             f"Saturation (Norm, clip={sat_clip_max:g})",
@@ -704,36 +707,9 @@ def main():
     base_data_dir = Path(__file__).resolve().parents[1] / "SimulationData" / "Evaluate"
 
     scenarios = [
-        (
-            "normal_2intersection",
-            base_data_dir / "Normal/2Intersection/config.sumocfg",
-            "checkpoints/normal_2intersection/normal_2intersection_checkpoint.pt",
-        ),
-        (
-            "normal_3intersection",
-            base_data_dir / "Normal/3Intersection/config.sumocfg",
-            "checkpoints/normal_3intersection/normal_3intersection_checkpoint.pt",
-        ),
-        (
-            "normal_4intersection",
-            base_data_dir / "Normal/4Intersection/config.sumocfg",
-            "checkpoints/normal_4intersection/normal_4intersection_checkpoint.pt",
-        ),
-        (
-            "crowded_2intersection",
-            base_data_dir / "Crowded/2Intersection/config.sumocfg",
-            "checkpoints/crowded_2intersection/crowded_2intersection_checkpoint.pt",
-        ),
-        (
-            "crowded_3intersection",
-            base_data_dir / "Crowded/3Intersection/config.sumocfg",
-            "checkpoints/crowded_3intersection/crowded_3intersection_checkpoint.pt",
-        ),
-        (
-            "crowded_4intersection",
-            base_data_dir / "Crowded/4Intersection/config.sumocfg",
-            "checkpoints/crowded_4intersection/crowded_4intersection_checkpoint.pt",
-        ),
+        (scenario.name, scenario.sumocfg_path, scenario.checkpoint_path)
+        for scenario in load_scenario_config()
+        if "compare_kpi" in scenario.tags
     ]
 
     if args.scenarios.strip():
@@ -829,7 +805,7 @@ def main():
     avg_3kpi = float(np.mean([r["avg_3kpi_improve_pct"] for r in results]))
 
     print("\n============= Overall Improvement (RL vs Fixed) =============")
-    print(f"Avg Wait-Time improvement         : {avg_delay:.2f}%")
+    print(f"Avg Control-Delay improvement         : {avg_delay:.2f}%")
     print(f"Avg Queue-Length improvement      : {avg_queue:.2f}%")
     print(f"Avg Saturation(norm) improvement  : {avg_sat_norm:.2f}%")
     print(f"Avg Directional Fairness improve  : {avg_fairness:.2f}%")

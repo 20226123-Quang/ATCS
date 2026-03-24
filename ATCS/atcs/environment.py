@@ -333,11 +333,35 @@ class TrafficEnvironment:
             )
             traci.trafficlight.setRedYellowGreenState(tls_id, phase.state)
             self._reset_cycle_lane_metrics(tls_id)
+            self._reset_phase_lane_metrics(tls_id)
             self.required_action.add(tls_id)
 
     def _reset_cycle_lane_metrics(self, tls_id: str) -> None:
         for lane_id in self.lanes_by_tls.get(tls_id, []):
             self.kpi_engine.start_new_cycle(lane_id)
+
+    def _reset_phase_lane_metrics(self, tls_id: str) -> None:
+        for lane_id in self.lanes_by_tls.get(tls_id, []):
+            self.kpi_engine.start_new_phase(lane_id)
+
+    def _green_lanes_for_phase(self, tls_id: str, phase_state: str) -> Set[str]:
+        green_lanes: Set[str] = set()
+        lane_index_map = self.lane_link_indices.get(tls_id, {})
+        for lane_id, link_indices in lane_index_map.items():
+            if any(
+                idx < len(phase_state) and phase_state[idx] in ("G", "g")
+                for idx in link_indices
+            ):
+                green_lanes.add(lane_id)
+        return green_lanes
+
+    def _lane_mask(self) -> np.ndarray:
+        mask = np.zeros((len(self.tls_ids), self.max_lanes), dtype=np.float32)
+        for tls_index, tls_id in enumerate(self.tls_ids):
+            lane_count = len(self.lanes_by_tls.get(tls_id, []))
+            if lane_count > 0:
+                mask[tls_index, :lane_count] = 1.0
+        return mask
 
     def _vehicle_pcu(self, vehicle_id: str, fallback_only: bool = False) -> float:
         constants = self.kpi_config.constants
@@ -383,36 +407,31 @@ class TrafficEnvironment:
                 current_vehicle_ids=current_vehicle_ids,
             )
 
-    def _mark_green_seconds_for_tls(self, tls_id: str, phase_state: str) -> None:
-        lane_index_map = self.lane_link_indices.get(tls_id, {})
+    def _update_service_state_for_tls(self, tls_id: str, phase_state: str) -> Set[str]:
+        green_lanes = self._green_lanes_for_phase(tls_id, phase_state)
         for lane_id in self.lanes_by_tls.get(tls_id, []):
-            link_indices = lane_index_map.get(lane_id, [])
-            lane_has_green = any(
-                idx < len(phase_state) and phase_state[idx] in ("G", "g")
-                for idx in link_indices
+            lane_has_green = lane_id in green_lanes
+            self.kpi_engine.mark_lane_service(
+                lane_id, lane_has_green, self.step_length_seconds
             )
             if lane_has_green:
                 self.kpi_engine.mark_lane_green_seconds(
                     lane_id, self.step_length_seconds
                 )
+        return green_lanes
 
     def _snapshot_green_end_queues(self, tls_id: str, phase_state: str) -> None:
-        """Snapshot current queue for all lanes that were green.
-        Feeds N_cb for HBS 2001 formula F-23."""
-        lane_index_map = self.lane_link_indices.get(tls_id, {})
-        for lane_id in self.lanes_by_tls.get(tls_id, []):
-            link_indices = lane_index_map.get(lane_id, [])
-            lane_has_green = any(
-                idx < len(phase_state) and phase_state[idx] in ("G", "g")
-                for idx in link_indices
-            )
-            if lane_has_green:
-                self.kpi_engine.snapshot_green_end_queue(lane_id)
+        """Snapshot residual queue for all lanes that were just served green."""
+        for lane_id in self._green_lanes_for_phase(tls_id, phase_state):
+            self.kpi_engine.snapshot_green_end_queue(lane_id)
 
     def _advance_to_next_phase(self, tls_id: str) -> None:
         runtime = self.tls_runtime[tls_id]
         program = self.tls_programs[tls_id]
         phase_count = len(program.phases)
+        current_phase = program.phases[runtime.current_phase_index]
+        if current_phase.phase_type == "green":
+            self._snapshot_green_end_queues(tls_id, current_phase.state)
 
         for _ in range(max(phase_count, 1)):
             next_index = (runtime.current_phase_index + 1) % phase_count
@@ -429,6 +448,7 @@ class TrafficEnvironment:
             runtime.remaining_phase_seconds = max(int(phase.duration_seconds), 0)
             runtime.decision_pending = False
             traci.trafficlight.setRedYellowGreenState(tls_id, phase.state)
+            self._reset_phase_lane_metrics(tls_id)
 
             if runtime.remaining_phase_seconds > 0:
                 return
@@ -482,9 +502,7 @@ class TrafficEnvironment:
                 program = self.tls_programs[tls_id]
                 phase = program.phases[runtime.current_phase_index]
                 runtime.cycle_elapsed_seconds += self.step_length_seconds
-
-                if phase.phase_type == "green":
-                    self._mark_green_seconds_for_tls(tls_id, phase.state)
+                self._update_service_state_for_tls(tls_id, phase.state)
 
                 runtime.remaining_phase_seconds -= self.step_length_seconds
                 if runtime.remaining_phase_seconds > 0:
@@ -506,8 +524,18 @@ class TrafficEnvironment:
             return True
 
     def _build_observation_reward(self, delta_t: int) -> Tuple[np.ndarray, np.ndarray]:
-        obs = np.zeros((len(self.tls_ids), self.max_lanes, 5), dtype=np.float32)
-        reward = np.zeros((len(self.tls_ids), self.max_lanes, 3), dtype=np.float32)
+        obs = np.zeros((len(self.tls_ids), self.max_lanes, 9), dtype=np.float32)
+        reward = np.zeros((len(self.tls_ids), self.max_lanes, 6), dtype=np.float32)
+        eps = self.kpi_config.constants.epsilon
+        sat_clip_max = float(
+            self.kpi_config.reward_design.get("saturation_norm_clip_max", 2.0)
+        )
+        split_clip_max = float(
+            self.kpi_config.reward_design.get("split_failure_clip_max", 1.0)
+        )
+        service_age_clip_cycles = float(
+            self.kpi_config.reward_design.get("service_age_clip_cycles", 2.0)
+        )
 
         for tls_index, tls_id in enumerate(self.tls_ids):
             runtime = self.tls_runtime[tls_id]
@@ -516,48 +544,87 @@ class TrafficEnvironment:
                 0.0,
             )
             current_phase = float(runtime.current_phase_index)
+            cycle_length = max(
+                float(runtime.cycle_length_seconds), float(self.step_length_seconds)
+            )
+            service_age_clip_seconds = max(
+                cycle_length * service_age_clip_cycles,
+                float(self.step_length_seconds),
+            )
+            current_green_lanes: Set[str] = set()
+            if tls_id in self.required_action:
+                phase = self.tls_programs[tls_id].phases[runtime.current_phase_index]
+                if phase.phase_type == "green":
+                    current_green_lanes = self._green_lanes_for_phase(tls_id, phase.state)
 
+            lane_entries = []
             for lane_index, lane_id in enumerate(self.lanes_by_tls.get(tls_id, [])):
+                lane_stats = self.kpi_engine.get_lane_stats(lane_id)
                 lane_kpi = self.kpi_engine.compute_lane_kpis(
                     lane_id,
                     cycle_length_seconds=float(runtime.cycle_length_seconds),
-                    min_green_seconds=float(self.min_green_seconds),
+                    green_floor_seconds=float(self.step_length_seconds),
                     lane_width_m=self.lane_width_m.get(lane_id),
                 )
 
-                # Observation uses the standard metrics
-                obs[tls_index, lane_index, 0] = lane_kpi.control_delay_seconds
-                obs[tls_index, lane_index, 1] = lane_kpi.degree_of_saturation
-                obs[tls_index, lane_index, 2] = lane_kpi.queue_length_meters
+                sat_norm = min(
+                    max(lane_kpi.degree_of_saturation, 0.0),
+                    sat_clip_max,
+                ) / max(sat_clip_max, eps)
+                starvation_norm = min(
+                    max(lane_stats.time_since_last_service_seconds, 0.0),
+                    service_age_clip_seconds,
+                ) / max(service_age_clip_seconds, eps)
+                residual_queue_meters = (
+                    max(lane_stats.residual_queue_vehicles, 0.0)
+                    * self.kpi_config.constants.average_vehicle_space_meter
+                )
+                split_failure_rate = min(
+                    max(self.kpi_engine.consume_pending_split_failure(lane_id), 0.0),
+                    split_clip_max,
+                ) / max(split_clip_max, eps)
+
+                lane_entries.append(
+                    {
+                        "lane_index": lane_index,
+                        "control_delay": lane_kpi.control_delay_seconds,
+                        "saturation_raw": lane_kpi.degree_of_saturation,
+                        "queue_length": lane_kpi.queue_length_meters,
+                        "is_controllable": 1.0 if lane_id in current_green_lanes else 0.0,
+                        "time_since_service": lane_stats.time_since_last_service_seconds,
+                        "residual_queue": residual_queue_meters,
+                        "phase_demand": lane_stats.phase_inflow_pcu,
+                        "sat_norm": sat_norm,
+                        "split_failure_rate": split_failure_rate,
+                        "starvation_norm": starvation_norm,
+                    }
+                )
+
+            tls_mean_starvation = (
+                float(np.mean([entry["starvation_norm"] for entry in lane_entries]))
+                if lane_entries
+                else 0.0
+            )
+
+            for entry in lane_entries:
+                lane_index = entry["lane_index"]
+                obs[tls_index, lane_index, 0] = entry["control_delay"]
+                obs[tls_index, lane_index, 1] = entry["saturation_raw"]
+                obs[tls_index, lane_index, 2] = entry["queue_length"]
                 obs[tls_index, lane_index, 3] = remaining_cycle
                 obs[tls_index, lane_index, 4] = current_phase
+                obs[tls_index, lane_index, 5] = entry["is_controllable"]
+                obs[tls_index, lane_index, 6] = entry["time_since_service"]
+                obs[tls_index, lane_index, 7] = entry["residual_queue"]
+                obs[tls_index, lane_index, 8] = entry["phase_demand"]
 
-                # Reward is scaled by the actual flow to penalize delay *on vehicles*
-                # An empty lane (inflow=0 and queue=0) MUST have 0 delay penalty.
-                lane_stats = self.kpi_engine.get_lane_stats(lane_id)
-                vehicle_volume = max(
-                    lane_stats.cycle_inflow_pcu + lane_stats.initial_cycle_queue, 0.0
-                )
-
-                # Weight the Control Delay by the volume: Total Delay (vehicle-seconds)
-                # Cap the volume multiplier to avoid exploding gradients if traffic is massive
-                volume_weight = min(vehicle_volume, 100.0)
-
-                # Ensure we have a valid time fraction so that delay is normalized
-                # across multiple decision steps. If an agent causes 5 decisions in 1 cycle
-                # the sum of (delta_t / cycle_length) will be 1, so the delay is counted once.
-                time_fraction = delta_t / max(runtime.cycle_length_seconds, 1.0)
-
-                # If volume_weight is 0, the penalty is correctly 0.
-                reward[tls_index, lane_index, 0] = (
-                    -lane_kpi.control_delay_seconds * volume_weight * time_fraction
-                )
-
-                # Queue length and saturation are already 0 when volume is 0,
-                # but we can also multiply them by a factor if we want.
-                # According to standard, just taking the negative is fine for them.
-                reward[tls_index, lane_index, 1] = -lane_kpi.queue_length_meters
-                reward[tls_index, lane_index, 2] = -lane_kpi.degree_of_saturation
+                fairness_gap = max(entry["starvation_norm"] - tls_mean_starvation, 0.0)
+                reward[tls_index, lane_index, 0] = -entry["control_delay"]
+                reward[tls_index, lane_index, 1] = -entry["queue_length"]
+                reward[tls_index, lane_index, 2] = -entry["sat_norm"]
+                reward[tls_index, lane_index, 3] = -entry["split_failure_rate"]
+                reward[tls_index, lane_index, 4] = -entry["starvation_norm"]
+                reward[tls_index, lane_index, 5] = -fairness_gap
 
         return obs, reward
 
@@ -622,7 +689,6 @@ class TrafficEnvironment:
         if len(cycle_length_map) == 1:
             cycle_length_value = next(iter(cycle_length_map.values()))
 
-        # Determine which lanes are green for the intersections that require action
         controllable_lanes = {}
         remaining_cycle_info = {}
 
@@ -637,19 +703,10 @@ class TrafficEnvironment:
             runtime = self.tls_runtime[tls_id]
             program = self.tls_programs[tls_id]
             phase = program.phases[runtime.current_phase_index]
-
             if phase.phase_type == "green":
-                green_lanes = set()
-                lane_index_map = self.lane_link_indices.get(tls_id, {})
-                for lane_id, link_indices in lane_index_map.items():
-                    # If any of the links for this lane have a 'G' or 'g' in the state
-                    if any(
-                        idx < len(phase.state) and phase.state[idx] in ("G", "g")
-                        for idx in link_indices
-                    ):
-                        green_lanes.add(lane_id)
+                green_lanes = self._green_lanes_for_phase(tls_id, phase.state)
                 if green_lanes:
-                    controllable_lanes[tls_id] = sorted(list(green_lanes))
+                    controllable_lanes[tls_id] = sorted(green_lanes)
 
         return {
             "min_green": self.min_green_seconds,
@@ -661,8 +718,10 @@ class TrafficEnvironment:
                 tls_id: self._compute_effective_green_range(tls_id)
                 for tls_id in self.required_action
             },
+            "controllable_lanes": controllable_lanes,
             "controllable_intersections": controllable_lanes,
             "remaining_cycle": remaining_cycle_info,
+            "lane_mask": self._lane_mask(),
         }
 
     def reset(self) -> Tuple[np.ndarray, np.ndarray, bool, Dict[str, object]]:

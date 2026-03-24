@@ -94,6 +94,15 @@ class MacroActor(nn.Module):
 		squashed = squashed.clamp(-_TANH_CLAMP, _TANH_CLAMP)
 		return torch.atanh(squashed)
 
+	def act(self, h_it, deterministic=False):
+		mean, std = self.forward(h_it)
+		if deterministic:
+			raw_action = mean
+		else:
+			dist = Normal(mean, std)
+			raw_action = dist.rsample()
+		return self._squash_and_scale(raw_action)
+
 	def sample(self, h_it):
 		"""
 		Stochastic action (PPO rollout / training)

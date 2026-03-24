@@ -1,0 +1,77 @@
+{
+  "metadata": {
+    "title": "ATCS Scenario Registry",
+    "version": "1.0.0"
+  },
+  "scenarios": [
+    {
+      "name": "normal_2intersection",
+      "sumocfg": "SimulationData/Evaluate/Normal/2Intersection/config.sumocfg",
+      "checkpoint": "checkpoints/normal_2intersection/normal_2intersection_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "twointersection"
+      ],
+      "enabled": true
+    },
+    {
+      "name": "few_2intersection",
+      "sumocfg": "SimulationData/Evaluate/Few/2Intersection/config.sumocfg",
+      "checkpoint": "checkpoints/few_2intersection/few_2intersection_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "twointersection"
+      ],
+      "enabled": true
+    },
+    {
+      "name": "crowded_2intersection",
+      "sumocfg": "SimulationData/Evaluate/Crowded/2Intersection/config.sumocfg",
+      "checkpoint": "checkpoints/crowded_2intersection/crowded_2intersection_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "twointersection"
+      ],
+      "enabled": true
+    },
+    {
+      "name": "oneintersection_3direction",
+      "sumocfg": "SimulationData/Evaluate/OneIntersection/3Direction/config.sumocfg",
+      "checkpoint": "checkpoints/oneintersection_3direction/oneintersection_3direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional"
+      ],
+      "enabled": true
+    },
+    {
+      "name": "oneintersection_4direction",
+      "sumocfg": "SimulationData/Evaluate/OneIntersection/4Direction/config.sumocfg",
+      "checkpoint": "checkpoints/oneintersection_4direction/oneintersection_4direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional"
+      ],
+      "enabled": true
+    },
+    {
+      "name": "oneintersection_5direction",
+      "sumocfg": "SimulationData/Evaluate/OneIntersection/5Direction/config.sumocfg",
+      "checkpoint": "checkpoints/oneintersection_5direction/oneintersection_5direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional"
+      ],
+      "enabled": true
+    }
+  ]
+}

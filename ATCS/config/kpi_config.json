@@ -110,13 +110,21 @@
     }
   ],
   "reward_design": {
-    "shape": "[n_intersections, n_lanes, 3]",
+    "shape": "[n_intersections, n_lanes, 6]",
     "components": [
       "average_control_delay_sec_per_vehicle",
       "average_queue_length_meter",
-      "degree_of_saturation"
+      "degree_of_saturation_norm"
     ],
-    "note": "Lower is better. Apply optimization externally or convert to negative scalar in trainer."
+    "auxiliary_terms": [
+      "split_failure_rate_at_green_end",
+      "time_since_last_service_norm",
+      "starvation_fairness_gap_norm"
+    ],
+    "saturation_norm_clip_max": 2.0,
+    "split_failure_clip_max": 1.0,
+    "service_age_clip_cycles": 2.0,
+    "note": "Lower is better. First 3 reward channels stay aligned with reported KPIs. Extra channels penalize split failure at green end, service starvation, and cross-lane unfairness on real lanes only."
   },
   "fixed_time_plans": {
     "J1": [

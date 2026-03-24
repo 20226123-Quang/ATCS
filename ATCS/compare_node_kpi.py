@@ -17,6 +17,7 @@ from acac import (
     AsyncTrajectoryBuffer,
     SyncTrajectoryBuffer,
     ACACTrainer,
+    load_scenario_config,
 )
 from atcs.environment import TrafficEnvironment
 
@@ -72,6 +73,13 @@ def initialize_acac(
     return trainer
 
 
+def _masked_tls_reward_mean(env, reward, tls_index, channel):
+    lane_count = len(env.lanes_by_tls.get(env.tls_ids[tls_index], []))
+    if lane_count <= 0:
+        return 0.0
+    return float(reward[tls_index, :lane_count, channel].mean())
+
+
 @torch.no_grad()
 def run_acac_episode(env, trainer, max_steps):
     obs, reward, done, info = env.reset()
@@ -108,8 +116,8 @@ def run_acac_episode(env, trainer, max_steps):
             trainer.hidden_states[i] = trainer.encoders[i](z_it, p_it, h_prev).squeeze(
                 0
             )
-            actor_out, _ = trainer.actors[i].sample(
-                trainer.hidden_states[i].unsqueeze(0)
+            actor_out = trainer.actors[i].act(
+                trainer.hidden_states[i].unsqueeze(0), deterministic=True
             )
             actor_val = float(actor_out.detach().item())
             action_dict[name] = trainer._scale_action(
@@ -119,9 +127,9 @@ def run_acac_episode(env, trainer, max_steps):
         next_obs, reward, done, info = env.step(action_dict)
 
         for i, name in enumerate(tls_names):
-            kpis["delay"][name].append(-float(reward[i, :, 0].mean()))
-            kpis["queue"][name].append(-float(reward[i, :, 1].mean()))
-            kpis["saturation"][name].append(-float(reward[i, :, 2].mean()))
+            kpis["delay"][name].append(-_masked_tls_reward_mean(env, reward, i, 0))
+            kpis["queue"][name].append(-_masked_tls_reward_mean(env, reward, i, 1))
+            kpis["saturation"][name].append(-_masked_tls_reward_mean(env, reward, i, 2))
 
         obs = next_obs
         t += info["delta_t"]
@@ -148,9 +156,9 @@ def run_fixed_time_episode(env, max_steps, fixed_extension=30):
         next_obs, reward, done, info = env.step(action_dict)
 
         for i, name in enumerate(tls_names):
-            kpis["delay"][name].append(-float(reward[i, :, 0].mean()))
-            kpis["queue"][name].append(-float(reward[i, :, 1].mean()))
-            kpis["saturation"][name].append(-float(reward[i, :, 2].mean()))
+            kpis["delay"][name].append(-_masked_tls_reward_mean(env, reward, i, 0))
+            kpis["queue"][name].append(-_masked_tls_reward_mean(env, reward, i, 1))
+            kpis["saturation"][name].append(-_masked_tls_reward_mean(env, reward, i, 2))
 
         obs = next_obs
         step_count += 1
@@ -177,7 +185,7 @@ def plot_comparison_per_node(
         parts = scenario_name.split("_")
         formatted_scenario = " ".join([p.capitalize() for p in parts])
 
-        labels = ["Wait Time (s)", "Queue Length (m)", "Degree of Saturation"]
+        labels = ["Control Delay (s)", "Queue Length (m)", "Degree of Saturation (norm)"]
         x = np.arange(len(labels))
         width = 0.35
 
@@ -286,8 +294,8 @@ def main():
     parser.add_argument(
         "--scenarios",
         type=str,
-        default="normal_2intersection,crowded_2intersection",
-        help="Comma-separated scenario names to run.",
+        default="",
+        help="Comma-separated scenario names to run. Empty means all.",
     )
     args = parser.parse_args()
 
@@ -297,20 +305,18 @@ def main():
     base_data_dir = Path(__file__).resolve().parents[1] / "SimulationData" / "Evaluate"
 
     scenarios = [
-        (
-            "normal_2intersection",
-            base_data_dir / "Normal/2Intersection/config.sumocfg",
-            "checkpoints/normal_2intersection/normal_2intersection_checkpoint.pt",
-        ),
-        (
-            "crowded_2intersection",
-            base_data_dir / "Crowded/2Intersection/config.sumocfg",
-            "checkpoints/crowded_2intersection/crowded_2intersection_checkpoint.pt",
-        ),
+        (scenario.name, scenario.sumocfg_path, scenario.checkpoint_path)
+        for scenario in load_scenario_config()
+        if "compare_kpi" in scenario.tags
     ]
 
-    selected = {x.strip() for x in args.scenarios.split(",") if x.strip()}
-    scenarios = [s for s in scenarios if s[0] in selected]
+    if args.scenarios.strip():
+        selected = {x.strip() for x in args.scenarios.split(",") if x.strip()}
+        scenarios = [s for s in scenarios if s[0] in selected]
+
+    if not scenarios:
+        print("No scenarios selected. Exiting.")
+        return
     all_rows = []
 
     for scenario_name, sumocfg_path, checkpoint_path in scenarios:

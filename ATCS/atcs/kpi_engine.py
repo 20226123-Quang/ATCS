@@ -20,6 +20,15 @@ class LaneRuntimeStats:
     green_seconds: float = 0.0
     initial_cycle_queue: float = 0.0
     previous_vehicle_ids: Set[str] = field(default_factory=set)
+    phase_inflow_pcu: float = 0.0
+    phase_outflow_pcu: float = 0.0
+    phase_steps: int = 0
+    phase_queue_start: float = 0.0
+    residual_queue_vehicles: float = 0.0
+    split_failure_rate: float = 0.0
+    pending_split_failure_rate: float = 0.0
+    last_green_demand_pcu: float = 0.0
+    time_since_last_service_seconds: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -47,6 +56,13 @@ class KPIEngine:
             self._lane_stats[lane_id] = LaneRuntimeStats()
         return self._lane_stats[lane_id]
 
+    @staticmethod
+    def _reset_phase_window(stats: LaneRuntimeStats) -> None:
+        stats.phase_inflow_pcu = 0.0
+        stats.phase_outflow_pcu = 0.0
+        stats.phase_steps = 0
+        stats.phase_queue_start = max(float(stats.queue_count), 0.0)
+
     def reset_lane_state(
         self,
         lane_id: str,
@@ -62,6 +78,12 @@ class KPIEngine:
         stats.green_seconds = 0.0
         stats.initial_cycle_queue = stats.queue_count
         stats.previous_vehicle_ids = set(previous_vehicle_ids)
+        stats.residual_queue_vehicles = 0.0
+        stats.split_failure_rate = 0.0
+        stats.pending_split_failure_rate = 0.0
+        stats.last_green_demand_pcu = 0.0
+        stats.time_since_last_service_seconds = 0.0
+        self._reset_phase_window(stats)
 
     def start_new_cycle(self, lane_id: str) -> None:
         stats = self.get_lane_stats(lane_id)
@@ -71,10 +93,45 @@ class KPIEngine:
         stats.cycle_outflow_pcu = 0.0
         stats.green_seconds = 0.0
         stats.initial_cycle_queue = stats.queue_count
+        self._reset_phase_window(stats)
+
+    def start_new_phase(self, lane_id: str) -> None:
+        stats = self.get_lane_stats(lane_id)
+        self._reset_phase_window(stats)
 
     def mark_lane_green_seconds(self, lane_id: str, delta_seconds: float = 1.0) -> None:
         stats = self.get_lane_stats(lane_id)
         stats.green_seconds += max(0.0, float(delta_seconds))
+
+    def mark_lane_service(
+        self, lane_id: str, was_served: bool, delta_seconds: float = 1.0
+    ) -> None:
+        stats = self.get_lane_stats(lane_id)
+        if was_served:
+            stats.time_since_last_service_seconds = 0.0
+        else:
+            stats.time_since_last_service_seconds += max(0.0, float(delta_seconds))
+
+    def snapshot_green_end_queue(self, lane_id: str) -> None:
+        stats = self.get_lane_stats(lane_id)
+        eps = self.constants.epsilon
+        residual_queue = max(float(stats.queue_count), 0.0)
+        served_demand = max(
+            float(stats.phase_queue_start) + float(stats.phase_inflow_pcu),
+            eps,
+        )
+        split_failure_rate = min(max(residual_queue / served_demand, 0.0), 1.0)
+
+        stats.residual_queue_vehicles = residual_queue
+        stats.last_green_demand_pcu = served_demand
+        stats.split_failure_rate = split_failure_rate
+        stats.pending_split_failure_rate = split_failure_rate
+
+    def consume_pending_split_failure(self, lane_id: str) -> float:
+        stats = self.get_lane_stats(lane_id)
+        value = float(stats.pending_split_failure_rate)
+        stats.pending_split_failure_rate = 0.0
+        return value
 
     def update_lane(
         self,
@@ -94,6 +151,9 @@ class KPIEngine:
         stats.cycle_steps += 1
         stats.cycle_inflow_pcu += inflow
         stats.cycle_outflow_pcu += outflow
+        stats.phase_inflow_pcu += inflow
+        stats.phase_outflow_pcu += outflow
+        stats.phase_steps += 1
         stats.previous_vehicle_ids = set(current_vehicle_ids)
 
     @staticmethod
@@ -117,7 +177,7 @@ class KPIEngine:
         self,
         lane_id: str,
         cycle_length_seconds: float,
-        min_green_seconds: float = 0.0,
+        green_floor_seconds: float = 0.0,
         lane_width_m: Optional[float] = None,
     ) -> LaneKPI:
         stats = self.get_lane_stats(lane_id)
@@ -132,11 +192,11 @@ class KPIEngine:
         # TCCS 24:2018 is a macroscopic formula that expects stable q.
         effective_period = max(float(cycle_steps), cycle_length)
         inflow_pcu_per_hour = stats.cycle_inflow_pcu * 3600.0 / effective_period
-        # KPI formulas are defined over a full cycle. During rollout we often sample
-        # mid-cycle, and lanes that have not reached their green yet would otherwise
-        # have near-zero capacity, which explodes v/c unrealistically.
+
+        # Use the actual granted green time. A tiny numerical floor keeps the capacity
+        # finite without masking the effect of the agent's green extension decision.
         g_effective = min(
-            max(stats.green_seconds, float(min_green_seconds), eps),
+            max(stats.green_seconds, float(green_floor_seconds), eps),
             cycle_length,
         )
         g_over_c = min(g_effective / cycle_length, 0.999)
@@ -156,7 +216,7 @@ class KPIEngine:
         t_h = max(f_hv * f1 * f2 * t_h0, eps)
         S = 3600.0 / t_h
         capacity = S * g_over_c
-        v_over_c = inflow_pcu_per_hour / max(capacity, eps)  # This is g in TCCS 24:2018
+        v_over_c = inflow_pcu_per_hour / max(capacity, eps)
 
         # -------------------------------------------------------------
         # 1. Chiều dài hàng chờ (N_GE) theo HBS 2001 (TCCS 24:2018 F-21)

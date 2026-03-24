@@ -3,7 +3,7 @@
 from .networks import SinusoidalPositionalEncoding, CentralizedCritic, AgentHistoryEncoder, MacroActor
 from .buffers import AsyncTrajectoryBuffer, SyncTrajectoryBuffer
 from .trainer import ACACTrainer
-from .config_loader import load_model_config, ModelConfig
+from .config_loader import load_model_config, load_scenario_config, ModelConfig, ScenarioConfig
 
 __all__ = [
     "SinusoidalPositionalEncoding",
@@ -14,5 +14,7 @@ __all__ = [
     "SyncTrajectoryBuffer",
     "ACACTrainer",
     "load_model_config",
-    "ModelConfig"
+    "load_scenario_config",
+    "ModelConfig",
+    "ScenarioConfig",
 ]
