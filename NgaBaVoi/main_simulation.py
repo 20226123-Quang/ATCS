@@ -5,7 +5,7 @@ import time
 import cal_crc
 import json
 import os
-from NgaBaVoi.ngabavoi_mapping import NgaBaVoiMapping
+from ngabavoi_mapping import NgaBaVoiMapping
 
 # --- CẤU HÌNH ---
 TARGET_IP = "192.168.8.138"
