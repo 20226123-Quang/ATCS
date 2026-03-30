@@ -105,9 +105,31 @@ class ACACTrainer:
         denom = lane_mask.sum().clamp_min(1.0)
         return (values * lane_mask).sum() / denom
 
+    @staticmethod
+    def _weighted_mean(values, weights):
+        denom = weights.sum()
+        if float(denom.detach().item()) <= 1e-8:
+            return torch.zeros((), dtype=values.dtype, device=values.device)
+        return (values * weights).sum() / denom
+
+    def _reward_weight_tensor(self, env, reward):
+        reward_tensor = torch.as_tensor(reward, dtype=torch.float32, device=self.device)
+        weights = torch.zeros(reward_tensor.shape[:2], dtype=torch.float32, device=self.device)
+        if env is None:
+            weights.fill_(1.0)
+            return weights
+
+        for tls_index, tls_id in enumerate(env.tls_ids):
+            for lane_index, lane_id in enumerate(env.lanes_by_tls.get(tls_id, [])):
+                weights[tls_index, lane_index] = float(
+                    env.kpi_engine.lane_demand_weight(lane_id)
+                )
+        return weights
+
     def _global_reward_scalar(self, reward, env=None):
         reward_tensor = torch.as_tensor(reward, dtype=torch.float32, device=self.device)
-        lane_mask = self._lane_mask_tensor(env, reward_tensor)
+        reward_weights = self._reward_weight_tensor(env, reward_tensor)
+        active_mask = reward_weights > 0.0
 
         weighted_terms = []
         channel_weights = [
@@ -121,8 +143,23 @@ class ACACTrainer:
         for channel_index, weight in enumerate(channel_weights):
             if channel_index >= reward_tensor.shape[-1]:
                 continue
-            term_value = self._masked_mean(reward_tensor[:, :, channel_index], lane_mask)
+            term_value = self._weighted_mean(reward_tensor[:, :, channel_index], reward_weights)
             weighted_terms.append((weight, term_value))
+
+        if bool(active_mask.any().detach().item()):
+            weighted_terms.append(
+                (
+                    0.25 * self.reward_delay_weight,
+                    reward_tensor[:, :, 0][active_mask].min(),
+                )
+            )
+            if reward_tensor.shape[-1] > 4:
+                weighted_terms.append(
+                    (
+                        0.25 * self.reward_starvation_weight,
+                        reward_tensor[:, :, 4][active_mask].min(),
+                    )
+                )
 
         if not weighted_terms:
             return 0.0
@@ -219,18 +256,19 @@ class ACACTrainer:
             # Bước môi trường
             # print(f"action dict: {action_dict}")
             next_obs, reward, done, info = env.step(action_dict)
+            reward_delta_t = max(int(info.get("delta_t", 1)), 1)
 
             # Lưu critic buffer
             self.critic_buffer.store(
                 {
                     "t": t,
                     "global_h": self._get_current_global_state().detach(),
-                    "reward": self._global_reward_scalar(reward, env),
+                    "reward": self._global_reward_scalar(reward, env) * reward_delta_t,
                 }
             )
 
             obs = next_obs
-            t += info["delta_t"]  # thời gian thực env đã chạy (giây)
+            t += reward_delta_t  # thời gian thực env đã chạy (giây)
 
     # =====================================================================
     # Evaluation
@@ -280,18 +318,26 @@ class ACACTrainer:
                 )
 
             next_obs, reward, done, info = env.step(action_dict)
+            reward_delta_t = max(int(info.get("delta_t", 1)), 1)
             reward_tensor = torch.as_tensor(reward, dtype=torch.float32, device=self.device)
-            lane_mask = self._lane_mask_tensor(env, reward_tensor)
-            total_delay += -float(self._masked_mean(reward_tensor[:, :, 0], lane_mask))
-            total_queue += -float(self._masked_mean(reward_tensor[:, :, 1], lane_mask))
+            reward_weights = self._reward_weight_tensor(env, reward_tensor)
+            total_delay += (
+                -float(self._weighted_mean(reward_tensor[:, :, 0], reward_weights))
+                * reward_delta_t
+            )
+            total_queue += (
+                -float(self._weighted_mean(reward_tensor[:, :, 1], reward_weights))
+                * reward_delta_t
+            )
             total_saturation_norm += (
-                -float(self._masked_mean(reward_tensor[:, :, 2], lane_mask))
+                -float(self._weighted_mean(reward_tensor[:, :, 2], reward_weights))
+                * reward_delta_t
                 if reward_tensor.shape[-1] > 2
                 else 0.0
             )
-            total_reward += self._global_reward_scalar(reward_tensor, env)
+            total_reward += self._global_reward_scalar(reward_tensor, env) * reward_delta_t
             obs = next_obs
-            t += info["delta_t"]
+            t += reward_delta_t
 
         return {
             "total_reward": total_reward,

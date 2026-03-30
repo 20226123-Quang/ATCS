@@ -583,26 +583,56 @@ class TrafficEnvironment:
                     max(self.kpi_engine.consume_pending_split_failure(lane_id), 0.0),
                     split_clip_max,
                 ) / max(split_clip_max, eps)
+                has_current_demand = self.kpi_engine.lane_has_current_demand(lane_id)
+                has_reward_demand = self.kpi_engine.lane_has_reward_demand(lane_id)
+                demand_weight = self.kpi_engine.lane_demand_weight(lane_id)
+
+                if not has_current_demand:
+                    starvation_norm = 0.0
+
+                if not has_reward_demand:
+                    lane_control_delay = 0.0
+                    lane_saturation_raw = 0.0
+                    lane_queue_length = 0.0
+                    sat_norm = 0.0
+                    split_failure_rate = 0.0
+                    residual_queue_meters = 0.0
+                    time_since_service = 0.0
+                    phase_demand = 0.0
+                else:
+                    lane_control_delay = lane_kpi.control_delay_seconds
+                    lane_saturation_raw = lane_kpi.degree_of_saturation
+                    lane_queue_length = lane_kpi.queue_length_meters
+                    time_since_service = lane_stats.time_since_last_service_seconds
+                    phase_demand = lane_stats.phase_inflow_pcu
 
                 lane_entries.append(
                     {
                         "lane_index": lane_index,
-                        "control_delay": lane_kpi.control_delay_seconds,
-                        "saturation_raw": lane_kpi.degree_of_saturation,
-                        "queue_length": lane_kpi.queue_length_meters,
+                        "control_delay": lane_control_delay,
+                        "saturation_raw": lane_saturation_raw,
+                        "queue_length": lane_queue_length,
                         "is_controllable": 1.0 if lane_id in current_green_lanes else 0.0,
-                        "time_since_service": lane_stats.time_since_last_service_seconds,
+                        "time_since_service": time_since_service,
                         "residual_queue": residual_queue_meters,
-                        "phase_demand": lane_stats.phase_inflow_pcu,
+                        "phase_demand": phase_demand,
                         "sat_norm": sat_norm,
                         "split_failure_rate": split_failure_rate,
                         "starvation_norm": starvation_norm,
+                        "has_current_demand": has_current_demand,
+                        "has_reward_demand": has_reward_demand,
+                        "demand_weight": demand_weight,
                     }
                 )
 
+            starvation_values = [
+                entry["starvation_norm"]
+                for entry in lane_entries
+                if entry["has_current_demand"]
+            ]
             tls_mean_starvation = (
-                float(np.mean([entry["starvation_norm"] for entry in lane_entries]))
-                if lane_entries
+                float(np.mean(starvation_values))
+                if starvation_values
                 else 0.0
             )
 
@@ -618,7 +648,9 @@ class TrafficEnvironment:
                 obs[tls_index, lane_index, 7] = entry["residual_queue"]
                 obs[tls_index, lane_index, 8] = entry["phase_demand"]
 
-                fairness_gap = max(entry["starvation_norm"] - tls_mean_starvation, 0.0)
+                fairness_gap = 0.0
+                if entry["has_current_demand"]:
+                    fairness_gap = max(entry["starvation_norm"] - tls_mean_starvation, 0.0)
                 reward[tls_index, lane_index, 0] = -entry["control_delay"]
                 reward[tls_index, lane_index, 1] = -entry["queue_length"]
                 reward[tls_index, lane_index, 2] = -entry["sat_norm"]

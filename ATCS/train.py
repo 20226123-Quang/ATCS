@@ -1,21 +1,22 @@
 """Entry-point script for training the ACAC model."""
 
 import argparse
-from pathlib import Path
 import csv
-import time
-import psutil
 import os
+import time
+from pathlib import Path
 
+import psutil
 import torch
+
 from acac import (
-    SinusoidalPositionalEncoding,
-    CentralizedCritic,
-    AgentHistoryEncoder,
-    MacroActor,
-    AsyncTrajectoryBuffer,
-    SyncTrajectoryBuffer,
     ACACTrainer,
+    AgentHistoryEncoder,
+    AsyncTrajectoryBuffer,
+    CentralizedCritic,
+    MacroActor,
+    SinusoidalPositionalEncoding,
+    SyncTrajectoryBuffer,
     load_model_config,
 )
 from atcs.environment import TrafficEnvironment
@@ -41,51 +42,40 @@ def initialize_acac(
     device="cpu",
 ):
     """
-    Khởi tạo toàn bộ ACAC từ config.
-    obs_dim  : kích thước obs đã flatten (max_lanes * 5)
-    action_dim: 1 (thời gian extend, scalar)
-    Returns: ACACTrainer instance
+    Initialize the ACAC stack from config.
+    obs_dim: flattened observation size (max_lanes * features)
+    action_dim: 1 (green extension seconds)
     """
     num_agents = len(tls_names)
 
-    # ---- Time encoder ----
     time_encoder = SinusoidalPositionalEncoding(time_embed_dim).to(device)
 
-    # ---- Per-agent encoders ----
     encoders = [
         AgentHistoryEncoder(obs_dim, time_embed_dim, hidden_dim).to(device)
         for _ in range(num_agents)
     ]
 
-    # ---- Per-agent actors (output [0, 1], trainer scales to effective range) ----
     actors = [
         MacroActor(hidden_dim, action_dim, min_action=0.0, max_action=1.0).to(device)
         for _ in range(num_agents)
     ]
 
-    # ---- Centralized critic ----
     critic = CentralizedCritic(hidden_dim, num_heads).to(device)
 
-    # ---- Buffers ----
     agents_buffer = AsyncTrajectoryBuffer(capacity=buffer_size, num_agents=num_agents)
     critic_buffer = SyncTrajectoryBuffer(capacity=buffer_size)
 
-    # ---- Combined Optimizer for BPTT ----
     all_params = list(critic.parameters())
     for actor in actors:
         all_params += list(actor.parameters())
     for encoder in encoders:
         all_params += list(encoder.parameters())
 
-    # Mặc định lấy actor_lr (thường bằng critic_lr hoặc gần bằng)
-    opt = torch.optim.Adam(all_params, lr=actor_lr)
-
     optimizers = {
-        "combined": opt,
+        "combined": torch.optim.Adam(all_params, lr=actor_lr),
     }
 
-    # ---- Trainer ----
-    trainer = ACACTrainer(
+    return ACACTrainer(
         actors=actors,
         encoders=encoders,
         critic=critic,
@@ -100,7 +90,39 @@ def initialize_acac(
         eps_clip=eps_clip,
     )
 
-    return trainer
+
+def load_existing_training_history(log_file: Path):
+    """Return reward history and the last logged episode number."""
+    if not log_file.exists():
+        return [], 0
+
+    rewards = []
+    last_episode = 0
+    with open(log_file, mode="r", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                rewards.append(float(row["Reward"]))
+                last_episode = max(last_episode, int(row["Episode"]))
+            except (KeyError, TypeError, ValueError):
+                continue
+
+    return rewards, last_episode
+
+
+def initialize_log_file(log_file: Path) -> None:
+    with open(log_file, mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(
+            [
+                "Episode",
+                "Reward",
+                "Critic_Loss",
+                "Time_Sec",
+                "CPU_Percent",
+                "RAM_Percent",
+            ]
+        )
 
 
 def main() -> None:
@@ -112,11 +134,12 @@ def main() -> None:
         / "OneIntersect"
         / "config_one_car_delay_40_5_cars.sumocfg"
     )
+    parser.add_argument("--sumocfg", default=default_cfg, help="Path to SUMO .sumocfg file")
     parser.add_argument(
-        "--sumocfg", default=default_cfg, help="Path to SUMO .sumocfg file"
-    )
-    parser.add_argument(
-        "--episodes", type=int, default=10000, help="Number of training episodes"
+        "--episodes",
+        type=int,
+        default=10000,
+        help="Total target training episodes. With --resume, training continues up to this total.",
     )
     parser.add_argument(
         "--steps", type=int, default=600, help="Number of decision steps per episode"
@@ -131,52 +154,71 @@ def main() -> None:
         default="",
         help="Optional path to checkpoint (.pt) to continue/fine-tune training",
     )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from existing checkpoint/log/plot instead of resetting them",
+    )
     args = parser.parse_args()
 
-    # ---- Setup Logging & Checkpoint Directories ----
     cfg_path = Path(args.sumocfg)
-    # Lấy tên thư mục cha (ví dụ "2Intersection") và thư mục ông (ví dụ "Crowded" hoặc "Normal")
     intersection_name = cfg_path.parent.name.lower()
     condition_name = cfg_path.parent.parent.name.lower()
     scenario_name = f"{condition_name}_{intersection_name}"
 
-    # Tạo thư mục checkpoints ở repo root để mọi script dùng chung một nơi
     repo_root = Path(__file__).resolve().parents[1]
     checkpoint_dir = repo_root / "checkpoints" / scenario_name
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    # Khởi tạo các đường dẫn file log, model, plot
     log_file = checkpoint_dir / f"{scenario_name}_training_log.csv"
     model_file = checkpoint_dir / f"{scenario_name}_checkpoint.pt"
     plot_file = checkpoint_dir / f"{scenario_name}_reward_plot.png"
     latest_model_file = model_file
+
     mpl_config_dir = checkpoint_dir / ".mplconfig"
     mpl_config_dir.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("MPLBACKEND", "Agg")
     os.environ["MPLCONFIGDIR"] = str(mpl_config_dir.resolve())
 
-    # Mỗi lần chạy train mới: reset CSV để không trộn nhiều run vào cùng log.
-    with open(log_file, mode="w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(
-            [
-                "Episode",
-                "Reward",
-                "Critic_Loss",
-                "Time_Sec",
-                "CPU_Percent",
-                "RAM_Percent",
-            ]
-        )
-
     print(f"[{scenario_name}] Output directory: {checkpoint_dir}")
+
+    if args.resume and not args.checkpoint and model_file.exists():
+        args.checkpoint = str(model_file)
+        print(f"[{scenario_name}] Resume mode: using existing checkpoint {model_file}")
+
+    if args.resume:
+        if not args.checkpoint:
+            raise ValueError(
+                "--resume requires --checkpoint or an existing scenario checkpoint file."
+            )
+        episode_rewards, start_episode = load_existing_training_history(log_file)
+        if not log_file.exists():
+            initialize_log_file(log_file)
+        print(
+            f"[{scenario_name}] Resuming from episode {start_episode}. "
+            f"Target total episodes: {args.episodes}."
+        )
+        if episode_rewards:
+            print(
+                f"[{scenario_name}] Loaded {len(episode_rewards)} reward points from existing log."
+            )
+    else:
+        initialize_log_file(log_file)
+        episode_rewards = []
+        start_episode = 0
+
+    if start_episode >= args.episodes:
+        print(
+            f"[{scenario_name}] Existing log already reached episode {start_episode}, "
+            f"which is >= target {args.episodes}. Nothing to do."
+        )
+        return
 
     env = TrafficEnvironment(sumocfg_path=args.sumocfg, use_gui=args.gui)
 
-    # Reset environment and get observation dimension
     obs, reward, done, info = env.reset()
-    obs_dim = obs.shape[1] * obs.shape[2]  # max_lanes * 5
-    obs_encoder_dim = obs_dim + 2  # +2 for eff_range (min_green, max_green) concat
+    obs_dim = obs.shape[1] * obs.shape[2]
+    obs_encoder_dim = obs_dim + 2
     print(f"Observation dimension: {obs_dim} (encoder input: {obs_encoder_dim})")
 
     device = torch.device(args.device)
@@ -214,8 +256,7 @@ def main() -> None:
     import subprocess
     import sys
 
-    episode_rewards = []
-    for ep in range(args.episodes):
+    for ep in range(start_episode, args.episodes):
         print(f"\n--- Episode {ep + 1}/{args.episodes} ---")
         start_time = time.time()
         metrics = trainer.train_episode(env, max_steps=args.steps)
@@ -234,7 +275,6 @@ def main() -> None:
         for i, aloss in metrics["actor_losses"].items():
             print(f"  Actor {i} Loss: {aloss:.4f}")
 
-        # Ghi log vào file CSV
         with open(log_file, mode="a", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(
@@ -248,9 +288,13 @@ def main() -> None:
                 ]
             )
 
-        # Cập nhật plot sau mỗi episode
         plt.figure(figsize=(10, 6))
-        plt.plot(range(1, ep + 2), episode_rewards, marker="o", linestyle="-")
+        plt.plot(
+            range(1, len(episode_rewards) + 1),
+            episode_rewards,
+            marker="o",
+            linestyle="-",
+        )
         plt.title(f"Training Reward over Episodes ({scenario_name})")
         plt.xlabel("Episode")
         plt.ylabel("Total Reward")
@@ -258,7 +302,6 @@ def main() -> None:
         plt.savefig(plot_file)
         plt.close()
 
-        # Lưu checkpoint đè lên chính nó (cập nhật mới nhất) mỗi episode
         latest_model_file = Path(trainer.save_model(str(model_file)))
 
     print(f"\nTraining complete. Model saved to {latest_model_file}")
