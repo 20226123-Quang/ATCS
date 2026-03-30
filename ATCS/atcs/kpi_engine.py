@@ -56,6 +56,41 @@ class KPIEngine:
             self._lane_stats[lane_id] = LaneRuntimeStats()
         return self._lane_stats[lane_id]
 
+    def lane_has_current_demand(self, lane_id: str) -> bool:
+        stats = self.get_lane_stats(lane_id)
+        eps = self.constants.epsilon
+        return bool(
+            stats.queue_count > eps
+            or stats.residual_queue_vehicles > eps
+            or len(stats.previous_vehicle_ids) > 0
+        )
+
+    def lane_has_reward_demand(self, lane_id: str) -> bool:
+        stats = self.get_lane_stats(lane_id)
+        eps = self.constants.epsilon
+        return bool(
+            self.lane_has_current_demand(lane_id)
+            or stats.phase_inflow_pcu > eps
+            or stats.cycle_inflow_pcu > eps
+            or stats.split_failure_rate > eps
+            or stats.pending_split_failure_rate > eps
+        )
+
+    def lane_demand_weight(self, lane_id: str) -> float:
+        stats = self.get_lane_stats(lane_id)
+        if not self.lane_has_reward_demand(lane_id):
+            return 0.0
+
+        vehicle_count = float(len(stats.previous_vehicle_ids))
+        weight = (
+            max(float(stats.queue_count), 0.0)
+            + max(float(stats.residual_queue_vehicles), 0.0)
+            + max(float(stats.phase_inflow_pcu), 0.0)
+            + max(float(stats.cycle_inflow_pcu), 0.0)
+            + vehicle_count
+        )
+        return max(weight, 1.0)
+
     @staticmethod
     def _reset_phase_window(stats: LaneRuntimeStats) -> None:
         stats.phase_inflow_pcu = 0.0
@@ -107,6 +142,9 @@ class KPIEngine:
         self, lane_id: str, was_served: bool, delta_seconds: float = 1.0
     ) -> None:
         stats = self.get_lane_stats(lane_id)
+        if not self.lane_has_current_demand(lane_id):
+            stats.time_since_last_service_seconds = 0.0
+            return
         if was_served:
             stats.time_since_last_service_seconds = 0.0
         else:

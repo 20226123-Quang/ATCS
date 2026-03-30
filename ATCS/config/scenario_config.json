@@ -72,6 +72,123 @@
         "directional"
       ],
       "enabled": true
+    },
+    {
+      "name": "few_3direction",
+      "sumocfg": "SimulationData/Evaluate/Few/3Direction/config.sumocfg",
+      "checkpoint": "checkpoints/few_3direction/few_3direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional",
+        "density"
+      ],
+      "enabled": false
+    },
+    {
+      "name": "few_4direction",
+      "sumocfg": "SimulationData/Evaluate/Few/4Direction/config.sumocfg",
+      "checkpoint": "checkpoints/few_4direction/few_4direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional",
+        "density"
+      ],
+      "enabled": false
+    },
+    {
+      "name": "few_5direction",
+      "sumocfg": "SimulationData/Evaluate/Few/5Direction/config.sumocfg",
+      "checkpoint": "checkpoints/few_5direction/few_5direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional",
+        "density"
+      ],
+      "enabled": false
+    },
+    {
+      "name": "normal_3direction",
+      "sumocfg": "SimulationData/Evaluate/Normal/3Direction/config.sumocfg",
+      "checkpoint": "checkpoints/normal_3direction/normal_3direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional",
+        "density"
+      ],
+      "enabled": false
+    },
+    {
+      "name": "normal_4direction",
+      "sumocfg": "SimulationData/Evaluate/Normal/4Direction/config.sumocfg",
+      "checkpoint": "checkpoints/normal_4direction/normal_4direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional",
+        "density"
+      ],
+      "enabled": false
+    },
+    {
+      "name": "normal_5direction",
+      "sumocfg": "SimulationData/Evaluate/Normal/5Direction/config.sumocfg",
+      "checkpoint": "checkpoints/normal_5direction/normal_5direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional",
+        "density"
+      ],
+      "enabled": false
+    },
+    {
+      "name": "crowded_3direction",
+      "sumocfg": "SimulationData/Evaluate/Crowded/3Direction/config.sumocfg",
+      "checkpoint": "checkpoints/crowded_3direction/crowded_3direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional",
+        "density"
+      ],
+      "enabled": false
+    },
+    {
+      "name": "crowded_4direction",
+      "sumocfg": "SimulationData/Evaluate/Crowded/4Direction/config.sumocfg",
+      "checkpoint": "checkpoints/crowded_4direction/crowded_4direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional",
+        "density"
+      ],
+      "enabled": false
+    },
+    {
+      "name": "crowded_5direction",
+      "sumocfg": "SimulationData/Evaluate/Crowded/5Direction/config.sumocfg",
+      "checkpoint": "checkpoints/crowded_5direction/crowded_5direction_checkpoint.pt",
+      "tags": [
+        "evaluate",
+        "compare_kpi",
+        "oneintersection",
+        "directional",
+        "density"
+      ],
+      "enabled": false
     }
   ]
 }
