@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<additionals>
+    <tlLogic id="J0" type="static" programID="fixed_nonconflict" offset="0">
+        <phase state="GGGGGGrrrrrrrrrrrrr" />
+        <phase state="yyyyyyrrrrrrrrrrrrr" />
+        <phase state="rrrrrrGGGGrrrrrrrrr" />
+        <phase state="rrrrrryyyyrrrrrrrrr" />
+        <phase state="rrrrrrrrrrGGGGGrrrr" />
+        <phase state="rrrrrrrrrryyyyyrrrr" />
+        <phase state="rrrrrrrrrrrrrrrGGGG" />
+        <phase state="rrrrrrrrrrrrrrryyyy" />
+    </tlLogic>
+    <tlLogic id="cluster5599998268_5599998291_7928757444_9323588912" type="static" programID="fixed_nonconflict" offset="0">
+        <phase state="GGGGGGrrrrrrrrrrrrrrrr" />
+        <phase state="yyyyyyrrrrrrrrrrrrrrrr" />
+        <phase state="rrrrrrGGGGGrrrrrrrrrrr" />
+        <phase state="rrrrrryyyyyrrrrrrrrrrr" />
+        <phase state="rrrrrrrrrrrGGGGGrrrrrr" />
+        <phase state="rrrrrrrrrrryyyyyrrrrrr" />
+        <phase state="rrrrrrrrrrrrrrrrGGGGGG" />
+        <phase state="rrrrrrrrrrrrrrrryyyyyy" />
+    </tlLogic>
+</additionals>
