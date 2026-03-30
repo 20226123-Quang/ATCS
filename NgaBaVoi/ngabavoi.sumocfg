@@ -7,7 +7,7 @@
 
     <input>
         <net-file value="ngabavoi.net.xml"/>
-        <route-files value="ngabavoi.rou.xml"/>
+        <route-files value="../SimulationData/Evaluate/Crowded/4Direction/route.rou.xml"/>
         <additional-files value="ngabavoi.add.xml"/>
     </input>
 

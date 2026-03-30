@@ -4,7 +4,7 @@ import os
 
 def analyze_kpis(folder_path="."):
     # 1. Tìm tất cả các file kpi_*.csv trong thư mục hiện tại hoặc results/
-    all_files = glob.glob(os.path.join(folder_path, "*_ngabavoi.csv"))
+    all_files = glob.glob(os.path.join(folder_path, "crowd_*_ngabavoi.csv"))
     
     if not all_files:
         print(f"[-] Không tìm thấy file *_ngabavoi.csv nào trong {os.path.abspath(folder_path)}")
@@ -54,7 +54,7 @@ def analyze_kpis(folder_path="."):
     print("="*75)
     
     # Xuất báo cáo tổng hợp
-    summary_df.to_csv("comparison_report.csv", index=False)
+    summary_df.to_csv("crow_kpi_ngabavoi.csv", index=False)
     print(f"[+] Đã xuất báo cáo so sánh tại: {os.getcwd()}/comparison_report.csv")
 
 if __name__ == "__main__":
