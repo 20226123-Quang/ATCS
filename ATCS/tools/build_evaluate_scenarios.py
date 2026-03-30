@@ -84,6 +84,16 @@ TWO_INTERSECTION_COUNTS = {
     "Normal": 1232,
     "Few": 320,
 }
+DIRECTIONAL_BASE_COUNTS = {
+    "3Direction": 720,
+    "4Direction": 960,
+    "5Direction": 1200,
+}
+DIRECTIONAL_DENSITY_MULTIPLIERS = {
+    "Few": 0.25,
+    "Normal": 1.0,
+    "Crowded": 2.0,
+}
 
 
 def indent_and_write(tree: ET.ElementTree, path: Path) -> None:
@@ -706,6 +716,40 @@ def prepare_one_intersection_scenarios() -> None:
         write_sumocfg(scenario_dir)
 
 
+def prepare_directional_density_scenarios() -> None:
+    source_root = EVALUATE_DIR / "OneIntersection"
+    density_seed_offsets = {"Few": 610, "Normal": 620, "Crowded": 630}
+
+    for density_name, multiplier in DIRECTIONAL_DENSITY_MULTIPLIERS.items():
+        target_root = EVALUATE_DIR / density_name
+        for index, (direction_name, base_count) in enumerate(DIRECTIONAL_BASE_COUNTS.items()):
+            source_dir = source_root / direction_name
+            if not source_dir.exists():
+                raise FileNotFoundError(f"Directional source scenario is missing: {source_dir}")
+
+            target_dir = target_root / direction_name
+            target_dir.mkdir(parents=True, exist_ok=True)
+
+            for source_path in source_dir.iterdir():
+                if not source_path.is_file():
+                    continue
+                if source_path.name in {"route.rou.xml", "config.sumocfg"}:
+                    continue
+                shutil.copy2(source_path, target_dir / source_path.name)
+
+            vehicle_count = max(1, int(round(base_count * multiplier)))
+            build_route_file_for_existing_tls_network(
+                target_dir / "network.net.xml",
+                target_dir / "route.rou.xml",
+                vehicle_count=vehicle_count,
+                seed=density_seed_offsets[density_name] + index,
+            )
+            write_sumocfg(
+                target_dir,
+                additional_files=scenario_additional_files(target_dir),
+            )
+
+
 def prepare_two_intersection_scenarios_from_standard() -> bool:
     standard_dir = EVALUATE_DIR / "Crowded" / "2nut"
     standard_network = standard_dir / "2nutgiao.net.xml"
@@ -830,6 +874,7 @@ def main() -> None:
         restyle_three_intersection_network(network_path)
 
     prepare_one_intersection_scenarios()
+    prepare_directional_density_scenarios()
     prepare_few_scenarios(include_two_intersection=not prepared_from_standard)
 
     for scenario_dir in sorted(EVALUATE_DIR.glob("**")):
