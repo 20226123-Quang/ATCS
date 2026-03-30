@@ -4,10 +4,10 @@ import os
 
 def analyze_kpis(folder_path="."):
     # 1. Tìm tất cả các file kpi_*.csv trong thư mục hiện tại hoặc results/
-    all_files = glob.glob(os.path.join(folder_path, "kpi_*.csv"))
+    all_files = glob.glob(os.path.join(folder_path, "*_ngabavoi.csv"))
     
     if not all_files:
-        print(f"[-] Không tìm thấy file kpi_*.csv nào trong {os.path.abspath(folder_path)}")
+        print(f"[-] Không tìm thấy file *_ngabavoi.csv nào trong {os.path.abspath(folder_path)}")
         return
 
     summary_results = []
@@ -26,7 +26,7 @@ def analyze_kpis(folder_path="."):
             metrics = {
                 "Case": case_name,
                 "Avg_Delay": df.iloc[:, 2].mean(),    # Cột 3: Delay_s
-                "Max_Queue": df.iloc[:, 3].max(),     # Cột 4: Queue_m
+                "Max_Queue": df.iloc[:, 3].mean(),     # Cột 4: Queue_m
                 "Avg_Saturation": df.iloc[:, 4].mean(), # Cột 5: Saturation
                 "Records": len(df)
             }

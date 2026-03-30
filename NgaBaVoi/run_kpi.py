@@ -62,11 +62,11 @@ def thread_listening():
 det_bridge = FamaDetectorBridge('detector_config.json')
 threading.Thread(target=thread_listening, daemon=True).start()
 
-traci.start(["sumo-gui", "-c", "ngabavoi.sumocfg", "--start"])
+traci.start(["sumo-gui", "-c", "ngabavoi.sumocfg", "--start", "--end", "500"])
 det_bridge.connect()
 
 # Chuẩn bị file CSV
-csv_f = open("kpi_report_ngabavoi_inductive.csv", "w", newline="")
+csv_f = open("ad_500s_ngabavoi.csv", "w", newline="")
 writer = csv.writer(csv_f)
 writer.writerow(["Time", "Lane", "Delay_s", "Queue_m", "Saturation"])
 

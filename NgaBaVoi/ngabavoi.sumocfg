@@ -11,4 +11,13 @@
         <additional-files value="ngabavoi.add.xml"/>
     </input>
 
+    <processing>
+        <step-length value="1.0"/> 
+    </processing>
+
+    <gui_only>
+        <start value="true"/>
+        <delay value="1000"/> 
+    </gui_only>
+
 </configuration>
