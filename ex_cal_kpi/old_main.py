@@ -7,7 +7,7 @@ import json
 import os
 import csv
 from lamp_mapping import LampMapper
-from ex_cal_kpi.kpi_engine import KPIEngine
+from ex_cal_kpi.new_kpi_engine import KPIEngine
 
 # --- CẤU HÌNH HỆ THỐNG ---
 TARGET_IP = "192.168.8.138"

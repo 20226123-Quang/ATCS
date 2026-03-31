@@ -4,9 +4,9 @@
     "port_udp": 4050,
     "tcp_ip_det": "192.168.8.138",
     "tcp_port_det": 32002,
-    "tls_id_sumo": "J7",
-    "cross_id": "01",
-    "cycle_length_default": 66.0
+    "tls_id_sumo": "clusterJ0_J2_J4",
+    "cross_id": "02",
+    "cycle_length_default": 99.0
   },
   "kpi_constants": {
     "t_h0": 1.8,
@@ -25,7 +25,14 @@
     }
   },
   "detectors": {
-    "e2_0": 3, "e2_1": 2, "e2_2": 1, "e2_3": 6, "e2_4": 5,
-    "e2_5": 4, "e2_6": 9, "e2_7": 8, "e2_8": 7, "e2_9": 10
+    "e2_0": 18,
+    "e2_1": 17,
+    "e2_2": 16,
+    "e2_3": 21,
+    "e2_4": 20,
+    "e2_5": 19,
+    "e2_6": 24,
+    "e2_7": 23,
+    "e2_8": 22
   }
 }

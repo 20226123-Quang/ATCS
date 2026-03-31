@@ -8,7 +8,16 @@
     <input>
         <net-file value="nga3.net.xml"/>
         <additional-files value="nga3.add.xml"/>
-        <route-files value="nga3.rou.xml"/>
+        <route-files value="../SimulationData/Evaluate/Crowded/3Direction/route.rou.xml"/>
     </input>
+
+        <processing>
+        <step-length value="1.0"/> 
+    </processing>
+
+    <gui_only>
+        <start value="true"/>
+        <delay value="1000"/> 
+    </gui_only>
 
 </configuration>

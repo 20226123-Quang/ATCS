@@ -7,7 +7,7 @@ import json
 import os
 import csv
 from ngabavoi_mapping import NgaBaVoiMapping
-from ex_cal_kpi.kpi_engine import KPIEngine
+from ex_cal_kpi.new_kpi_engine import KPIEngine
 
 # --- CẤU HÌNH ---
 TARGET_IP = "192.168.8.138"
