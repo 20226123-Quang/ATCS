@@ -4,7 +4,7 @@ import os
 
 def analyze_all_data_kpis(folder_path="."):
     # 1. Tìm tất cả các file crowd_*_ngabavoi.csv
-    all_files = glob.glob(os.path.join(folder_path, "debug_nga5.csv"))
+    all_files = glob.glob(os.path.join(folder_path, "crowd_*_nga5.csv"))
     
     if not all_files:
         print(f"[-] Không tìm thấy file dữ liệu nào tại: {os.path.abspath(folder_path)}")
@@ -30,7 +30,7 @@ def analyze_all_data_kpis(folder_path="."):
                 "Avg_Delay_s": df_to_analyze['Delay_s'].mean(),
                 "Avg_Saturation": df_to_analyze['Saturation'].mean(),
                 "Avg_Queue_Veh": df_to_analyze['Avg_Queue'].mean(),
-                "Max_Queue_m": df_to_analyze['Queue_m'].mean(),
+                "Avg_Queue_m": df_to_analyze['Queue_m'].mean(),
                 "Avg_Inflow_PCU": df_to_analyze['Inflow_PCU_h'].mean(),
                 "Avg_Outflow_PCU": df_to_analyze['Outflow_PCU_h'].mean(),
                 "Total_Records": len(df_to_analyze)
@@ -62,8 +62,8 @@ def analyze_all_data_kpis(folder_path="."):
     print("="*110 + "\n")
 
     # Xuất file báo cáo tổng hợp
-    summary_df.to_csv("huhu_nga5.csv", index=False)
-    print("[*] Đã lưu báo cáo đầy đủ tại: huhu_nga5.csv")
+    summary_df.to_csv("new_crowd_nga5.csv", index=False)
+    print("[*] Đã lưu báo cáo đầy đủ tại: crow_nga5.csv")
 
 if __name__ == "__main__":
     analyze_all_data_kpis()

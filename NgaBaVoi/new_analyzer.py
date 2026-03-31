@@ -30,7 +30,7 @@ def analyze_all_data_kpis(folder_path="."):
                 "Avg_Delay_s": df_to_analyze['Delay_s'].mean(),
                 "Avg_Saturation": df_to_analyze['Saturation'].mean(),
                 "Avg_Queue_Veh": df_to_analyze['Avg_Queue'].mean(),
-                "Max_Queue_m": df_to_analyze['Queue_m'].max(),
+                "Avg_Queue_m": df_to_analyze['Queue_m'].mean(),
                 "Avg_Inflow_PCU": df_to_analyze['Inflow_PCU_h'].mean(),
                 "Avg_Outflow_PCU": df_to_analyze['Outflow_PCU_h'].mean(),
                 "Total_Records": len(df_to_analyze)
@@ -62,7 +62,7 @@ def analyze_all_data_kpis(folder_path="."):
     print("="*110 + "\n")
 
     # Xuất file báo cáo tổng hợp
-    summary_df.to_csv("full_comparison_report_ngabavoi.csv", index=False)
+    summary_df.to_csv("crowd_ngabavoi.csv", index=False)
     print("[*] Đã lưu báo cáo đầy đủ tại: full_comparison_report_ngabavoi.csv")
 
 if __name__ == "__main__":

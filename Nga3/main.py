@@ -101,13 +101,18 @@ def run():
     traci.start(["sumo-gui", "-c", "nga3.sumocfg", "--start", "--step-length", str(STEP_LEN)])
     
     # Mở file CSV để ghi kết quả crowd_ad_ngabavoi.csv
-    csv_f = open(f"crowd_ad_nga3.csv", "w", newline="")
+    csv_f = open(f"crowd_in_nga3.csv", "w", newline="")
     writer = csv.writer(csv_f)
     # Header khớp hoàn toàn với LaneKPI trong kpi_engine.py của bạn
     writer.writerow(["Time", "Lane", "Delay_s", "Saturation", "Queue_m", "Inflow_PCU_h", "Outflow_PCU_h", "Avg_Queue"])
 
-    controlled_lanes = traci.trafficlight.getControlledLanes(TLS_ID)
+    # controlled_lanes = traci.trafficlight.getControlledLanes(TLS_ID)
     last_applied_state = ""
+
+    #debug phần tính kpi
+    all_lanes = traci.trafficlight.getControlledLanes(TLS_ID)
+    unique_lanes = list(dict.fromkeys(all_lanes))
+    lane_to_indices = {lane: [i for i, l in enumerate(all_lanes) if l == lane] for lane in unique_lanes}
 
     try:
         while traci.simulation.getMinExpectedNumber() > 0:
@@ -135,25 +140,65 @@ def run():
                             det_bridge.memory[det_id] = is_occupied
                     except: pass
 
-            # C. CẬP NHẬT DỮ LIỆU KPI MỖI BƯỚC NHẢY (0.5s)
-            for lane in controlled_lanes:
-                # Lấy tập hợp ID xe hiện tại trên làn
-                v_ids = set(traci.lane.getLastStepVehicleIDs(lane))
-                idx = controlled_lanes.index(lane)
-                # Kiểm tra màu đèn từ chuỗi state hiện tại
-                is_green = last_applied_state[idx].lower() in ['g', 'u'] if last_applied_state else False
+            # # C. CẬP NHẬT DỮ LIỆU KPI MỖI BƯỚC NHẢY (0.5s)
+            # for lane in controlled_lanes:
+            #     # Lấy tập hợp ID xe hiện tại trên làn
+            #     v_ids = set(traci.lane.getLastStepVehicleIDs(lane))
+            #     idx = controlled_lanes.index(lane)
+            #     # Kiểm tra màu đèn từ chuỗi state hiện tại
+            #     is_green = last_applied_state[idx].lower() in ['g', 'u'] if last_applied_state else False
                 
-                # Cập nhật vào engine (Bản chuẩn truyền set v_ids)
+            #     # Cập nhật vào engine (Bản chuẩn truyền set v_ids)
+            #     engine.update_lane(lane, v_ids, is_green, STEP_LEN)
+
+            #Debug tính KPI
+            for lane in unique_lanes:
+                # Lấy tập hợp ID xe trên làn thực tế (không bị đếm trùng)
+                v_ids = set(traci.lane.getLastStepVehicleIDs(lane))
+                
+                # Xác định trạng thái đèn Xanh: Chỉ cần 1 trong các index của lane này Xanh là tính là Xanh
+                is_green = False
+                if last_applied_state:
+                    for idx in lane_to_indices[lane]:
+                        if last_applied_state[idx].lower() in ['g', 'u']:
+                            is_green = True
+                            break
+                
+                # Cập nhật vào engine
                 engine.update_lane(lane, v_ids, is_green, STEP_LEN)
 
-            # D. XUẤT KPI THEO CHU KỲ (DÙNG CYCLE_LEN_INPUT)
+            # # D. XUẤT KPI THEO CHU KỲ (DÙNG CYCLE_LEN_INPUT)
+            # curr_time_int = int(curr_time)
+            # if curr_time_int % int(CYCLE_LEN_INPUT) == 0 and curr_time_int > 0 and curr_time_int != last_export_time:
+            #     for lane in controlled_lanes:
+            #         # Gọi compute_kpi với chu kỳ thực tế bạn nhập
+            #         res = engine.compute_kpi(lane, CYCLE_LEN_INPUT)
+                    
+            #         # Ghi 8 cột dữ liệu chuẩn LaneKPI của bạn
+            #         writer.writerow([
+            #             curr_time_int, 
+            #             lane, 
+            #             round(res.control_delay_seconds, 2), 
+            #             round(res.degree_of_saturation, 2),
+            #             round(res.queue_length_meters, 2),
+            #             round(res.inflow_pcu_per_hour, 2),
+            #             round(res.outflow_pcu_per_hour, 2),
+            #             round(res.avg_queue_vehicles, 2)
+            #         ])
+            #         # Reset dữ liệu để tính chu kỳ tiếp theo
+            #         engine.reset_cycle(lane)
+                
+            #     last_export_time = curr_time_int
+            #     print(f"[*] KPI Exported at {curr_time_int}s | Cycle: {CYCLE_LEN_INPUT}s")
+
+            #Debug tính KPI
             curr_time_int = int(curr_time)
             if curr_time_int % int(CYCLE_LEN_INPUT) == 0 and curr_time_int > 0 and curr_time_int != last_export_time:
-                for lane in controlled_lanes:
-                    # Gọi compute_kpi với chu kỳ thực tế bạn nhập
+                for lane in unique_lanes:
+                    # Tính toán KPI cho làn duy nhất
                     res = engine.compute_kpi(lane, CYCLE_LEN_INPUT)
                     
-                    # Ghi 8 cột dữ liệu chuẩn LaneKPI của bạn
+                    # Ghi dữ liệu chuẩn 8 cột
                     writer.writerow([
                         curr_time_int, 
                         lane, 
@@ -164,12 +209,11 @@ def run():
                         round(res.outflow_pcu_per_hour, 2),
                         round(res.avg_queue_vehicles, 2)
                     ])
-                    # Reset dữ liệu để tính chu kỳ tiếp theo
+                    # Reset dữ liệu cho chu kỳ mới
                     engine.reset_cycle(lane)
                 
                 last_export_time = curr_time_int
-                print(f"[*] KPI Exported at {curr_time_int}s | Cycle: {CYCLE_LEN_INPUT}s")
-
+                print(f"[*] KPI Exported for {len(unique_lanes)} unique lanes at {curr_time_int}s")
             time.sleep(0.01)
 
     except Exception as e:

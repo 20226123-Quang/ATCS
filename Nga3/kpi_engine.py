@@ -106,6 +106,24 @@ class KPIEngine:
         m_tb = (inflow_h * cycle_len) / 3600.0
         x = v_over_c
 
+        # #Áp dụng nếu tính quan sát trong nC chu kỳ 
+        # if x <= 0.65:
+        #     n_ge = 0.0
+        # elif x <= 0.9:
+        #     val_09 = 1.0 / (0.26 + m_tb / 150.0)
+        #     n_ge = (x - 0.65) / 0.25 * val_09
+        # elif x <= 1.0:
+        #     val_09 = 1.0 / (0.26 + m_tb / 150.0)
+        #     val_10 = 0.3476 * (max(m_max, 0.0) ** 0.5)
+        #     n_ge = val_09 + (x - 0.9) / 0.1 * (val_10 - val_09)
+        # elif x <= 1.2:
+        #     val_10 = 0.3476 * (max(m_max, 0.0) ** 0.5)
+        #     val_12 = (m_max * 0.2 + 5.0) / 2.0
+        #     n_ge = val_10 + (x - 1.0) / 0.2 * (val_12 - val_10)
+        # else:
+        #     n_ge = m_max * (x - 1.0) / 2.0
+
+        #Áp dụng nếu tính quan sát trong 1 chu kỳ 
         if x <= 0.65:
             n_ge = 0.0
         elif x <= 0.9:
@@ -113,10 +131,10 @@ class KPIEngine:
             n_ge = (x - 0.65) / 0.25 * val_09
         elif x <= 1.0:
             val_09 = 1.0 / (0.26 + m_tb / 150.0)
-            val_10 = 0.3476 * (max(m_max, 0.0) ** 0.5)
+            val_10 = 0.545 * (max(m_max, 0.0) ** 0.5)
             n_ge = val_09 + (x - 0.9) / 0.1 * (val_10 - val_09)
         elif x <= 1.2:
-            val_10 = 0.3476 * (max(m_max, 0.0) ** 0.5)
+            val_10 = 0.545 * (max(m_max, 0.0) ** 0.5)
             val_12 = (m_max * 0.2 + 5.0) / 2.0
             n_ge = val_10 + (x - 1.0) / 0.2 * (val_12 - val_10)
         else:
