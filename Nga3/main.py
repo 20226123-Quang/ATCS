@@ -101,7 +101,7 @@ def run():
     traci.start(["sumo-gui", "-c", "nga3.sumocfg", "--start", "--step-length", str(STEP_LEN)])
     
     # Mở file CSV để ghi kết quả crowd_ad_ngabavoi.csv
-    csv_f = open(f"crowd_in_nga3.csv", "w", newline="")
+    csv_f = open(f"few_ad_next_nga3.csv", "w", newline="")
     writer = csv.writer(csv_f)
     # Header khớp hoàn toàn với LaneKPI trong kpi_engine.py của bạn
     writer.writerow(["Time", "Lane", "Delay_s", "Saturation", "Queue_m", "Inflow_PCU_h", "Outflow_PCU_h", "Avg_Queue"])
