@@ -4,7 +4,7 @@ import os
 
 def analyze_all_data_kpis(folder_path="."):
     # 1. Tìm tất cả các file crowd_*_ngabavoi.csv
-    all_files = glob.glob(os.path.join(folder_path, "crowd_*_ngabavoi.csv"))
+    all_files = glob.glob(os.path.join(folder_path, "*_*_ngabavoi.csv"))
     
     if not all_files:
         print(f"[-] Không tìm thấy file dữ liệu nào tại: {os.path.abspath(folder_path)}")
@@ -22,7 +22,7 @@ def analyze_all_data_kpis(folder_path="."):
             df_to_analyze = df.copy()
 
             # Xác định kịch bản từ tên file
-            case_name = os.path.basename(filename).replace("crowd_", "").replace("_ngabavoi.csv", "").upper()
+            case_name = os.path.basename(filename).replace(".csv", "").upper()
             
             # Tính toán các chỉ số trung bình trên toàn bộ tập dữ liệu
             metrics = {
@@ -62,8 +62,8 @@ def analyze_all_data_kpis(folder_path="."):
     print("="*110 + "\n")
 
     # Xuất file báo cáo tổng hợp
-    summary_df.to_csv("crowd_ngabavoi.csv", index=False)
-    print("[*] Đã lưu báo cáo đầy đủ tại: full_comparison_report_ngabavoi.csv")
+    summary_df.to_csv("all_records_ngabavoi.csv", index=False)
+    print("[*] Đã lưu báo cáo đầy đủ tại: all_records_ngabavoi.csv")
 
 if __name__ == "__main__":
     analyze_all_data_kpis()

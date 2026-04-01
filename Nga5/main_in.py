@@ -21,7 +21,7 @@ TARGET_PORT_UDP = cfg['cabinet_info']['port_udp']
 TLS_ID = cfg['cabinet_info']['tls_id_sumo']
 CROSS_ID = cfg['cabinet_info']['cross_id'] # Ví dụ: 01
 # Đổi lại lamp_range
-LAMP_RANGE = range(1, 11) 
+LAMP_RANGE = range(16, 28) 
 STEP_LEN = 0.5 
 CYCLE_LEN_INPUT = float(cfg['cabinet_info']['cycle_length_default'])
 
@@ -98,16 +98,21 @@ def run():
     # Khởi động luồng truy vấn đèn
     threading.Thread(target=thread_sequential_query, daemon=True).start()
     
-    traci.start(["sumo-gui", "-c", "ngabavoi.sumocfg", "--start", "--step-length", str(STEP_LEN)])
+    traci.start(["sumo-gui", "-c", "nga5.sumocfg", "--start", "--step-length", str(STEP_LEN)])
     
     # Mở file CSV để ghi kết quả crowd_ad_ngabavoi.csv
-    csv_f = open(f"few_in_ngabavoi.csv", "w", newline="")
+    csv_f = open(f"few_in_test_nga5.csv", "w", newline="")
     writer = csv.writer(csv_f)
     # Header khớp hoàn toàn với LaneKPI trong kpi_engine.py của bạn
     writer.writerow(["Time", "Lane", "Delay_s", "Saturation", "Queue_m", "Inflow_PCU_h", "Outflow_PCU_h", "Avg_Queue"])
 
-        # controlled_lanes = traci.trafficlight.getControlledLanes(TLS_ID)
+    # controlled_lanes = traci.trafficlight.getControlledLanes(TLS_ID)
     last_applied_state = ""
+
+    #Cho phần induction chu kỳ biến đổi
+    cycle_start_time = 0.0
+    first_state_in_cycle = None
+    is_calculating_cycle = False
 
     #debug phần tính kpi
     all_lanes = traci.trafficlight.getControlledLanes(TLS_ID)
@@ -191,29 +196,66 @@ def run():
             #     last_export_time = curr_time_int
             #     print(f"[*] KPI Exported at {curr_time_int}s | Cycle: {CYCLE_LEN_INPUT}s")
 
-            #Debug tính KPI
-            curr_time_int = int(curr_time)
-            if curr_time_int % int(CYCLE_LEN_INPUT) == 0 and curr_time_int > 0 and curr_time_int != last_export_time:
-                for lane in unique_lanes:
-                    # Tính toán KPI cho làn duy nhất
-                    res = engine.compute_kpi(lane, CYCLE_LEN_INPUT)
+            # #Debug tính KPI
+            # curr_time_int = int(curr_time)
+            # if curr_time_int % int(CYCLE_LEN_INPUT) == 0 and curr_time_int > 0 and curr_time_int != last_export_time:
+            #     for lane in unique_lanes:
+            #         # Tính toán KPI cho làn duy nhất
+            #         res = engine.compute_kpi(lane, CYCLE_LEN_INPUT)
                     
-                    # Ghi dữ liệu chuẩn 8 cột
-                    writer.writerow([
-                        curr_time_int, 
-                        lane, 
-                        round(res.control_delay_seconds, 2), 
-                        round(res.degree_of_saturation, 2),
-                        round(res.queue_length_meters, 2),
-                        round(res.inflow_pcu_per_hour, 2),
-                        round(res.outflow_pcu_per_hour, 2),
-                        round(res.avg_queue_vehicles, 2)
-                    ])
-                    # Reset dữ liệu cho chu kỳ mới
-                    engine.reset_cycle(lane)
+            #         # Ghi dữ liệu chuẩn 8 cột
+            #         writer.writerow([
+            #             curr_time_int, 
+            #             lane, 
+            #             round(res.control_delay_seconds, 2), 
+            #             round(res.degree_of_saturation, 2),
+            #             round(res.queue_length_meters, 2),
+            #             round(res.inflow_pcu_per_hour, 2),
+            #             round(res.outflow_pcu_per_hour, 2),
+            #             round(res.avg_queue_vehicles, 2)
+            #         ])
+            #         # Reset dữ liệu cho chu kỳ mới
+            #         engine.reset_cycle(lane)
                 
-                last_export_time = curr_time_int
-                print(f"[*] KPI Exported for {len(unique_lanes)} unique lanes at {curr_time_int}s")
+            #     last_export_time = curr_time_int
+            #     print(f"[*] KPI Exported for {len(unique_lanes)} unique lanes at {curr_time_int}s")
+            
+            #For Induction - cycle lengt không cố định:
+            if last_applied_state:
+                # 1. Ghi nhận trạng thái đầu tiên của chu kỳ (thường là pha Xanh hướng chính)
+                if first_state_in_cycle is None:
+                    first_state_in_cycle = last_applied_state
+                    cycle_start_time = curr_time
+                    print(f"[*] Started first cycle at {curr_time}s")
+                
+                # 2. Kiểm tra nếu quay lại trạng thái đầu tiên sau một khoảng thời gian (tránh nhiễu)
+                # Mình để min_gap là 30s để tránh việc đèn đứng yên ở 1 pha bị tính là hết chu kỳ
+                elif last_applied_state == first_state_in_cycle and (curr_time - cycle_start_time) > 30:
+                    measured_cycle_len = curr_time - cycle_start_time
+                    
+                    for lane in unique_lanes:
+                        # Gọi compute_kpi với chu kỳ THỰC TẾ vừa đo được
+                        res = engine.compute_kpi(lane, measured_cycle_len)
+                        
+                        # Ghi dữ liệu (Thêm cột Measured_Cycle để theo dõi)
+                        writer.writerow([
+                            int(curr_time), 
+                            lane, 
+                            round(res.control_delay_seconds, 2), 
+                            round(res.degree_of_saturation, 2),
+                            round(res.queue_length_meters, 2),
+                            round(res.inflow_pcu_per_hour, 2),
+                            round(res.outflow_pcu_per_hour, 2),
+                            round(res.avg_queue_vehicles, 2),
+                            round(measured_cycle_len, 2) # Cột mới
+                        ])
+                        engine.reset_cycle(lane)
+                    
+                    print(f"[*] KPI Exported | Measured Cycle: {measured_cycle_len:.2f}s at Time {curr_time}s")
+                    
+                    # Cập nhật mốc thời gian cho chu kỳ tiếp theo
+                    cycle_start_time = curr_time
+
             time.sleep(0.01)
 
     except Exception as e:
