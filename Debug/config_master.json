@@ -1,0 +1,31 @@
+{
+  "cabinet_info": {
+    "ip": "192.168.8.138",
+    "port_udp": 4050,
+    "tcp_ip_det": "192.168.8.138",
+    "tcp_port_det": 32002,
+    "tls_id_sumo": "J7",
+    "cross_id": "01",
+    "cycle_length_default": 66.0
+  },
+  "kpi_constants": {
+    "t_h0": 1.8,
+    "f_hv": 1.1,
+    "f_b": 1.0,
+    "f_r": 1.0,
+    "f_d": 1.0,
+    "avg_veh_space": 7.5,
+    "epsilon": 1e-6,
+    "pcu_mapping": {
+      "car": 1.0,
+      "motorcycle": 0.5,
+      "truck": 2.0,
+      "bus": 2.5,
+      "car_van": 1.5
+    }
+  },
+  "detectors": {
+    "e2_0": 3, "e2_1": 2, "e2_2": 1, "e2_3": 6, "e2_4": 5,
+    "e2_5": 4, "e2_6": 9, "e2_7": 8, "e2_8": 7, "e2_9": 10
+  }
+}

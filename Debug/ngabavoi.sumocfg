@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-03-24 15:39:30 by Eclipse SUMO sumo Version 1.19.0
+-->
+
+<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="ngabavoi.net.xml"/>
+        <route-files value="../SimulationData/Evaluate/Crowded/4Direction/route.rou.xml"/>
+        <additional-files value="ngabavoi.add.xml"/>
+    </input>
+
+    <processing>
+        <step-length value="1.0"/> 
+    </processing>
+
+    <gui_only>
+        <start value="true"/>
+        <delay value="1000"/> 
+    </gui_only>
+
+</configuration>
