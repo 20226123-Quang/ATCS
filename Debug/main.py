@@ -10,7 +10,7 @@ from lamp_mapping import LampMapper
 from kpi_engine import KPIEngine
 
 # ==========================================
-# --- CẤU HÌNH NÚT GIAO (CHỈNH TẠI ĐÂY) ---
+# --- CẤU HÌNH NÚT GIAO ---
 # ==========================================
 with open('config_master.json', 'r', encoding='utf-8') as f:
     cfg = json.load(f)
@@ -20,14 +20,12 @@ TARGET_PORT_UDP = cfg['cabinet_info']['port_udp']
 TLS_ID = cfg['cabinet_info']['tls_id_sumo']
 CROSS_ID = cfg['cabinet_info']['cross_id'] 
 LAMP_RANGE = range(1, 11) 
-STEP_LEN = 0.5 
 
 mapper = LampMapper()
 engine = KPIEngine(cfg['kpi_constants']) 
 
 shared_lamp_status = {} 
 status_lock = threading.Lock()
-# ==========================================
 
 class CycleDetector:
     def __init__(self):
@@ -44,17 +42,21 @@ class CycleDetector:
             self.first_state = current_state
             self.last_state = current_state
             self.start_time = current_time
+            print(f"[*] Cycle Detection Started: First State captured at {current_time}s")
             return None
         
         if current_state != self.last_state:
             self.last_state = current_state
             self.has_changed = True
             
+            # Kiểm tra quay lại trạng thái đầu tiên
             if current_state == self.first_state and self.has_changed:
                 duration = current_time - self.start_time
-                self.start_time = current_time
-                self.has_changed = False
-                return duration
+                # Ràng buộc chu kỳ tối thiểu 10s để không nhầm với vàng/đỏ
+                if duration >= 20.0:
+                    self.start_time = current_time
+                    self.has_changed = False
+                    return duration
         return None
 
 # --- 1. LOGIC GỬI DETECTOR (TCP) ---
@@ -108,10 +110,6 @@ def thread_sequential_query():
             time.sleep(0.01)
         time.sleep(0.2)
 
-def get_sumo_direction(raw_dir):
-    mapping = {'s': 's', 'l': 'l', 'L': 'l', 'r': 'r', 'R': 'r', 't': 'l'}
-    return mapping.get(raw_dir, 's')
-
 # --- 3. CHẠY MÔ PHỎNG ---
 def run():
     det_bridge = FamaDetectorBridge('config_master.json')
@@ -119,11 +117,12 @@ def run():
 
     threading.Thread(target=thread_sequential_query, daemon=True).start()
     
-    traci.start(["sumo-gui", "-c", "ngabavoi.sumocfg", "--start", "--step-length", str(STEP_LEN)])
+    traci.start(["sumo-gui", "-c", "ngabavoi.sumocfg", "--start"])
     
-    csv_f = open(f"ft_in_ngabavoi.csv", "w", newline="")
+    csv_f = open(f"ad_debug_ngabavoi.csv", "w", newline="")
     writer = csv.writer(csv_f)
-    writer.writerow(["Time", "Lane", "Delay_s", "Saturation", "Queue_m", "Inflow_PCU_h", "Outflow_PCU_h", "Avg_Queue"])
+    # Header mới: Bỏ Queue_m, thêm TotalDemand_h
+    writer.writerow(["Time", "Lane", "Delay_s", "Saturation", "Avg_Queue_Veh", "Inflow_PCU_h", "TotalDemand_h", "Capacity_h", "Residual_NGE"])
 
     last_applied_state = ""
     cycle_detector = CycleDetector()
@@ -131,31 +130,21 @@ def run():
     all_lanes = traci.trafficlight.getControlledLanes(TLS_ID)
     unique_lanes = list(dict.fromkeys(all_lanes))
     
-    lane_to_dir_indices = {}
+    lane_to_indices = {}
     links = traci.trafficlight.getControlledLinks(TLS_ID)
     for i, link_list in enumerate(links):
         if not link_list: continue
-        from_lane, to_lane, via_lane = link_list[0]
-        if from_lane not in lane_to_dir_indices:
-            lane_to_dir_indices[from_lane] = {}
-        
-        lane_links = traci.lane.getLinks(from_lane)
-        for link_data in lane_links:
-            target_lane = link_data[0]
-            raw_dir = link_data[6] # Direction index là 6
-            if target_lane == to_lane:
-                direction = get_sumo_direction(raw_dir)
-                if direction not in lane_to_dir_indices[from_lane]:
-                    lane_to_dir_indices[from_lane][direction] = []
-                lane_to_dir_indices[from_lane][direction].append(i)
-                break
+        from_lane = link_list[0][0]
+        if from_lane not in lane_to_indices:
+            lane_to_indices[from_lane] = []
+        lane_to_indices[from_lane].append(i)
 
     try:
         while traci.simulation.getMinExpectedNumber() > 0:
             traci.simulationStep()
             curr_time = traci.simulation.getTime()
+            delta_t = traci.simulation.getDeltaT()
 
-            # A. ĐỒNG BỘ ĐÈN
             with status_lock:
                 local_status = shared_lamp_status.copy()
             if local_status:
@@ -164,7 +153,6 @@ def run():
                     traci.trafficlight.setRedYellowGreenState(TLS_ID, new_state)
                     last_applied_state = new_state
 
-            # B. GỬI TÍN HIỆU DETECTOR
             if det_connected:
                 for det_id, channel in det_bridge.mapping.items():
                     try:
@@ -174,7 +162,6 @@ def run():
                             det_bridge.memory[det_id] = is_occupied
                     except: pass
 
-            # C. CẬP NHẬT DỮ LIỆU KPI MỖI BƯỚC NHẢY
             for lane in unique_lanes:
                 v_ids = traci.lane.getLastStepVehicleIDs(lane)
                 
@@ -190,33 +177,33 @@ def run():
 
                 link_green_status = {} 
                 if last_applied_state:
-                    for move, indices in lane_to_dir_indices.get(lane, {}).items():
-                        for idx in indices:
-                            is_g = last_applied_state[idx].lower() in ['g', 'u']
-                            link_green_status[idx] = is_g
+                    for idx in lane_to_indices.get(lane, []):
+                        if idx < len(last_applied_state):
+                            link_green_status[idx] = last_applied_state[idx].lower() in ['g', 'u']
 
-                engine.update_lane(lane, v_ids, v_movements, link_green_status, STEP_LEN)
+                engine.update_lane(lane, v_ids, v_movements, link_green_status, delta_t)
 
-            # D. XUẤT KPI THEO CHU KỲ
-            cycle_duration = cycle_detector.check_cycle(last_applied_state, curr_time)
-            if cycle_duration:
-                print(f"[*] Cycle detected: {cycle_duration}s at {curr_time}s")
-                for lane in unique_lanes:
-                    res = engine.compute_kpi(lane, cycle_duration)
-                    writer.writerow([
-                        int(curr_time), 
-                        lane, 
-                        round(res.control_delay_seconds, 2), 
-                        round(res.degree_of_saturation, 2),
-                        round(res.queue_length_meters, 2),
-                        round(res.inflow_pcu_per_hour, 2),
-                        round(res.outflow_pcu_per_hour, 2),
-                        round(res.avg_queue_vehicles, 2)
-                    ])
-                    engine.reset_cycle(lane, res.n_ge)
-                csv_f.flush()
+            if last_applied_state:
+                cycle_duration = cycle_detector.check_cycle(last_applied_state, curr_time)
+                if cycle_duration:
+                    print(f"[*] Cycle detected: {cycle_duration}s at {curr_time}s")
+                    for lane in unique_lanes:
+                        res = engine.compute_kpi(lane, cycle_duration)
+                        writer.writerow([
+                            int(curr_time), 
+                            lane, 
+                            round(res.control_delay_seconds, 2), 
+                            round(res.degree_of_saturation, 2),
+                            round(res.avg_queue_vehicles, 2),
+                            round(res.inflow_pcu_per_hour, 2),
+                            round(res.total_demand_pcu_h, 2),
+                            round(res.capacity_pcu_h, 2),
+                            round(res.n_ge, 2)
+                        ])
+                        engine.reset_cycle(lane, res.n_ge)
+                    csv_f.flush()
 
-            time.sleep(0.01)
+            time.sleep(0.005)
 
     except Exception as e:
         print(f"[ERROR] {e}")
