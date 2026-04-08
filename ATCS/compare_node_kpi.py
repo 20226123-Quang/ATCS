@@ -24,6 +24,10 @@ from atcs.environment import TrafficEnvironment
 _cfg = load_model_config()
 
 
+def _should_log_lane_width_factor(scenario_name):
+    return scenario_name == "oneintersection_4direction"
+
+
 def initialize_acac(
     obs_dim, action_dim, min_action, max_action, tls_names, device="cpu"
 ):
@@ -354,7 +358,13 @@ def main():
         trainer.critic.eval()
 
         print("Running ACAC Evaluation...")
-        env = TrafficEnvironment(sumocfg_path=sumocfg_path, use_gui=False)
+        env = TrafficEnvironment(
+            sumocfg_path=sumocfg_path,
+            use_gui=False,
+            log_lane_width_adjustment_factor=_should_log_lane_width_factor(
+                scenario_name
+            ),
+        )
         acac_kpis = run_acac_episode(env, trainer, args.steps)
         env.close()
 

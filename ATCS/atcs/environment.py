@@ -49,6 +49,7 @@ class TrafficEnvironment:
         use_gui: Optional[bool] = None,
         max_episode_seconds: Optional[int] = None,
         sumo_binary: Optional[str] = None,
+        log_lane_width_adjustment_factor: bool = False,
     ) -> None:
         self.sumocfg_path = _resolve_sumocfg_path(Path(sumocfg_path).resolve())
         self.kpi_config: KPIConfig = load_kpi_config(kpi_config_path)
@@ -64,12 +65,10 @@ class TrafficEnvironment:
         self.step_length_seconds = max(int(sim_cfg.default_step_length_seconds), 1)
         self.min_green_seconds = int(sim_cfg.min_green_seconds)
         self.max_green_seconds = int(sim_cfg.max_green_seconds)
-        self.config_cycle_length_seconds = int(sim_cfg.cycle_length_seconds)
-        self.cycle_length_seconds = self.config_cycle_length_seconds
+        self.cycle_length_seconds = 0
         self.max_extension_seconds = max(
             self.max_green_seconds - self.min_green_seconds, 0
         )
-        self.reference_green_seconds = 45
         self.use_gui = sim_cfg.use_gui if use_gui is None else bool(use_gui)
         self.max_episode_seconds = (
             int(sim_cfg.max_episode_seconds)
@@ -83,6 +82,8 @@ class TrafficEnvironment:
 
         self.kpi_engine = KPIEngine(self.kpi_config.constants)
         self.tls_runtime: Dict[str, TLSRuntimeState] = {}
+        self.log_lane_width_adjustment_factor = bool(log_lane_width_adjustment_factor)
+        self._lane_width_adjustment_logged = False
 
         self.lanes_by_tls: Dict[str, List[str]] = {}
         self.lane_link_indices: Dict[str, Dict[str, List[int]]] = {}
@@ -160,13 +161,13 @@ class TrafficEnvironment:
     def _derive_cycle_length_seconds(self, phases: List[PhaseDefinition]) -> int:
         green_count = sum(1 for phase in phases if phase.phase_type == "green")
         if green_count <= 0:
-            return max(self.config_cycle_length_seconds, 1)
+            return max(sum(phase.duration_seconds for phase in phases), 1)
 
         yellow_seconds = max(
             int(self.kpi_config.simulation.yellow_fallback_seconds),
             0,
         )
-        per_phase_seconds = self.reference_green_seconds + yellow_seconds
+        per_phase_seconds = max(self.min_green_seconds, 0) + yellow_seconds
         return max(green_count * per_phase_seconds, 1)
 
     def _refresh_tls_programs_from_sumo(self) -> None:
@@ -268,7 +269,7 @@ class TrafficEnvironment:
             if len(unique_cycle_lengths) == 1:
                 self.cycle_length_seconds = next(iter(unique_cycle_lengths))
             else:
-                self.cycle_length_seconds = self.config_cycle_length_seconds
+                self.cycle_length_seconds = max(unique_cycle_lengths)
 
     def _ensure_connection(self) -> None:
         if not self.connected:
@@ -314,6 +315,28 @@ class TrafficEnvironment:
             self.kpi_engine.reset_lane_state(lane_id, initial_queue, vehicle_ids)
             for vehicle_id in vehicle_ids:
                 self.vehicle_pcu_cache[vehicle_id] = self._vehicle_pcu(vehicle_id)
+
+    def _log_lane_width_adjustment_factors(self) -> None:
+        if (
+            not self.log_lane_width_adjustment_factor
+            or self._lane_width_adjustment_logged
+        ):
+            return
+
+        print(
+            f"[LaneWidthFactor] sumocfg={self.sumocfg_path} "
+            f"scenario_dir={self.sumocfg_path.parent.name}"
+        )
+        for tls_id in self.tls_ids:
+            for lane_id in self.lanes_by_tls.get(tls_id, []):
+                lane_width_m = self.lane_width_m.get(lane_id)
+                f_b_nomograph = KPIEngine._lane_width_adjustment_factor(lane_width_m)
+                width_text = "None" if lane_width_m is None else f"{lane_width_m:.3f}"
+                print(
+                    f"[LaneWidthFactor] tls={tls_id} lane={lane_id} "
+                    f"width_m={width_text} f_b_nomograph={f_b_nomograph:.4f}"
+                )
+        self._lane_width_adjustment_logged = True
 
     def _prepare_tls_runtime(self) -> None:
         self.tls_runtime = {}
@@ -476,10 +499,11 @@ class TrafficEnvironment:
             # - Agent predicts continuous extension e (seconds).
             # - Effective range is [e_min, e_max].
             # - Executed green is absolute x = base_green + e.
-            # - Cycle length stays fixed (no cycle_length_seconds += extension).
+            # - Current cycle length grows with the granted green extension.
             base_green = float(self.min_green_seconds)
             green_seconds = int(round(base_green + extension))
             runtime.remaining_phase_seconds = max(green_seconds, 0)
+            runtime.cycle_length_seconds += max(int(round(extension)), 0)
 
             if runtime.remaining_phase_seconds <= 0:
                 self._advance_to_next_phase(tls_id)
@@ -508,7 +532,7 @@ class TrafficEnvironment:
                 if runtime.remaining_phase_seconds > 0:
                     continue
 
-                # Khi hết thời gian bất kỳ pha nào (kể cả đã được extend), tự động chuyển pha tiếp theo
+                # Advance automatically when any phase ends, including extended greens.
                 self._advance_to_next_phase(tls_id)
 
             self.done = self._check_done()
@@ -630,54 +654,16 @@ class TrafficEnvironment:
 
     def _compute_effective_green_range(self, tls_id: str) -> Tuple[float, float]:
         """
-        Tính khoảng extension hợp lệ [e_min, e_max] cho pha xanh hiện tại.
+        Compute the valid extension range [e_min, e_max] for the current green phase.
 
-        Quy ước action:
-        - Agent dự đoán extension e (giây).
-        - Thời gian xanh thực thi là x = base_green + e.
-        - base_green mặc định = min_green_seconds.
-        - Chu kỳ là cố định, nên e phải đảm bảo phần còn lại của cycle vẫn khả thi.
+        Cycle length is dynamic per scenario and per cycle, so the current phase
+        only needs to respect the configured green bounds.
         """
-        runtime = self.tls_runtime[tls_id]
-        program = self.tls_programs[tls_id]
+        del tls_id
         base_green = float(self.min_green_seconds)
         max_green = float(self.max_green_seconds)
-
-        # Thời gian còn lại trong chu kỳ tại lúc cần quyết định cho pha hiện tại.
-        t_remain = float(runtime.cycle_length_seconds - runtime.cycle_elapsed_seconds)
-
-        # Các pha SAU pha hiện tại.
-        phases_after = program.phases[runtime.current_phase_index + 1 :]
-        remaining_green_count = sum(1 for p in phases_after if p.phase_type == "green")
-        total_non_green_after = sum(
-            p.duration_seconds for p in phases_after if p.phase_type != "green"
-        )
-
-        # Future minimal/maximal time demand (excluding current green).
-        future_min = float(remaining_green_count) * base_green + total_non_green_after
-        future_max = float(remaining_green_count) * max_green + total_non_green_after
-
-        # Feasible absolute green range for current phase.
-        min_x = max(base_green, t_remain - future_max)
-        max_x = min(max_green, t_remain - future_min)
-
-        if min_x > max_x:
-            # Defensive fallback for degenerate timing states:
-            # collapse to the closest feasible absolute green inside [base_green, max_green].
-            x_safe = min(max(t_remain - future_min, base_green), max_green)
-            min_x = x_safe
-            max_x = x_safe
-
-        min_ext = max(0.0, min_x - base_green)
-        max_ext = min(float(self.max_extension_seconds), max_x - base_green)
-        if min_ext > max_ext:
-            min_ext = max_ext
-
-        print(
-            f"Remain phase: {remaining_green_count}, total yellow after: {total_non_green_after}, "
-            f"t_remain: {t_remain}, min_e: {min_ext}, max_e: {max_ext}"
-        )
-
+        min_ext = 0.0
+        max_ext = max(0.0, min(float(self.max_extension_seconds), max_green - base_green))
         return min_ext, max_ext
 
     def _build_info(self, delta_t: int) -> Dict[str, object]:
@@ -735,6 +721,7 @@ class TrafficEnvironment:
         self.required_action = set()
 
         self._build_lane_topology()
+        self._log_lane_width_adjustment_factors()
 
         # Run one step to populate lane vehicles at time 0->1.
         traci.simulationStep()
@@ -783,3 +770,4 @@ class TrafficEnvironment:
             self.close()
         except Exception:
             pass
+

@@ -103,6 +103,10 @@ def initialize_acac(
     return trainer
 
 
+def _should_log_lane_width_factor(scenario_name: str) -> bool:
+    return scenario_name == "oneintersection_4direction"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     default_cfg = str(
@@ -171,7 +175,11 @@ def main() -> None:
 
     print(f"[{scenario_name}] Output directory: {checkpoint_dir}")
 
-    env = TrafficEnvironment(sumocfg_path=args.sumocfg, use_gui=args.gui)
+    env = TrafficEnvironment(
+        sumocfg_path=args.sumocfg,
+        use_gui=args.gui,
+        log_lane_width_adjustment_factor=_should_log_lane_width_factor(scenario_name),
+    )
 
     # Reset environment and get observation dimension
     obs, reward, done, info = env.reset()

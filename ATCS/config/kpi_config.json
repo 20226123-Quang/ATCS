@@ -10,7 +10,6 @@
     "min_green_seconds": 15,
     "max_green_seconds": 90,
     "yellow_fallback_seconds": 3,
-    "cycle_length_seconds": 192,
     "use_gui": false
   },
   "kpi_formulas": {
@@ -28,7 +27,7 @@
       "name": "Độ trễ điều khiển / Thời gian trễ (tw)",
       "formula": "tw = tw1 + tw2 = [tc*(1-f)^2] / [2*(1 - q/S)] + [3600*N_GE] / [f*S] --- (Công thức F-21, F-22, F-23)",
       "parameters_calculation": {
-        "tw1 (Trễ cơ bản)": "Thời gian trễ phát sinh do phương tiện phải dừng đèn đỏ. Phụ thuộc lớn vào thời gian chu kỳ (tc), tỉ lệ đèn xanh (f) và lưu lượng tới (q). Trong SUMO, tc = `cycle_length_seconds`.",
+        "tw1 (Trễ cơ bản)": "Thời gian trễ phát sinh do phương tiện phải dừng đèn đỏ. Phụ thuộc lớn vào thời gian chu kỳ (tc), tỉ lệ đèn xanh (f) và lưu lượng tới (q). Trong SUMO, tc được tính động theo kịch bản: `(tong_thoi_gian_xanh + thoi_gian_vang) * so_pha`.",
         "tw2 (Trễ do tắc nghẽn)": "Phát sinh khi hệ thống bị vượt tải (còn xe chờ sau đèn xanh). Phụ thuộc vào Chiều dài hàng chờ trung bình dư thừa (N_GE).",
         "tc (Thời gian chu kỳ [s])": "Trong mô phỏng là số giây trong một chu kỳ (tổng các pha đèn).",
         "N_GE": "Hàng chờ tồn đọng cuối chu kỳ, tính bằng công thức riêng dựa trên g."

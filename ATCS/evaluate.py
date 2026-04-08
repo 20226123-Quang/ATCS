@@ -81,6 +81,11 @@ def initialize_acac(obs_dim, action_dim, min_action, max_action, tls_names,
 	return trainer
 
 
+def _should_log_lane_width_factor(sumocfg_path: str) -> bool:
+	normalized_path = str(Path(sumocfg_path)).replace("\\", "/").lower()
+	return "oneintersection/4direction" in normalized_path
+
+
 def print_metrics(metrics: dict) -> None:
 	print("\n" + "=" * 50)
 	print("         EVALUATION RESULTS")
@@ -107,6 +112,7 @@ def main() -> None:
 	args = parser.parse_args()
 
 	use_gui = not args.no_gui
+	should_log_lane_width_factor = _should_log_lane_width_factor(args.sumocfg)
 
 	print(f"Loading environment from: {args.sumocfg}")
 	print(f"GUI mode: {use_gui}")
@@ -176,7 +182,11 @@ def main() -> None:
 
 	# Tạo lại env với GUI
 	print("\nStarting SUMO simulation with GUI...")
-	env = TrafficEnvironment(sumocfg_path=args.sumocfg, use_gui=use_gui)
+	env = TrafficEnvironment(
+		sumocfg_path=args.sumocfg,
+		use_gui=use_gui,
+		log_lane_width_adjustment_factor=should_log_lane_width_factor,
+	)
 
 	with torch.no_grad():
 		metrics = trainer.evaluate_model(env, max_steps=args.steps)
