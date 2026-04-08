@@ -252,6 +252,35 @@ class CycleKPICollector:
     def on_cycle_end(self, tls_id: str, cycle_length_seconds: float) -> None:
         if self.env is None:
             return
+        self._append_cycle_rows(tls_id, cycle_length_seconds)
+
+    def finalize_open_cycles(self) -> None:
+        if self.env is None:
+            return
+        for tls_id in self.env.tls_ids:
+            runtime = self.env.tls_runtime.get(tls_id)
+            if runtime is None:
+                continue
+            if self.cycle_counter_by_tls.get(tls_id, 0) > 0:
+                continue
+            cycle_length = max(float(runtime.cycle_elapsed_seconds), self.step_length_seconds)
+            has_cycle_data = any(
+                (
+                    state.queue_integral > 0.0
+                    or state.lane_green_seconds > 0.0
+                    or sum(state.inflow_pcu_by_link.values()) > 0.0
+                    or sum(state.outflow_pcu_by_link.values()) > 0.0
+                )
+                for lane_id, state in self.lane_states.items()
+                if lane_id in self.env.lanes_by_tls.get(tls_id, [])
+            )
+            if not has_cycle_data:
+                continue
+            self._append_cycle_rows(tls_id, cycle_length)
+
+    def _append_cycle_rows(self, tls_id: str, cycle_length_seconds: float) -> None:
+        if self.env is None:
+            return
         eps = self.constants.epsilon
         cycle_length = max(float(cycle_length_seconds), self.step_length_seconds)
         cycle_index = self.cycle_counter_by_tls[tls_id]
@@ -418,6 +447,8 @@ def _run_fixed(env: InstrumentedTrafficEnvironment, max_seconds: int, fixed_exte
         _, _, done, info = env.step(action)
         if env.simulation_time >= max_seconds:
             break
+    if env.collector is not None:
+        env.collector.finalize_open_cycles()
     env.close()
     return list(env.collector.rows if env.collector is not None else [])
 
@@ -456,6 +487,8 @@ def _run_rl(env: InstrumentedTrafficEnvironment, trainer: ACACTrainer, max_secon
         t += info["delta_t"]
         if env.simulation_time >= max_seconds:
             break
+    if env.collector is not None:
+        env.collector.finalize_open_cycles()
     env.close()
     return list(env.collector.rows if env.collector is not None else [])
 

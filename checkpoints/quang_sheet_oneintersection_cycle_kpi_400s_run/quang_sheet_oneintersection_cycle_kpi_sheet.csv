@@ -1,0 +1,28 @@
+scenario_family,metric,series,few,normal,crowded
+oneintersection_3direction,queue length,fixed time (Quang),0.6971,4.0098,8.5889
+oneintersection_3direction,queue length,AI,1.7758,6.6784,14.2405
+oneintersection_3direction,queue length,AI vs Fixed time,-154.73%,-66.55%,-65.80%
+oneintersection_3direction,avg wait time,fixed time (Quang),19.25s,20.65s,26.08s
+oneintersection_3direction,avg wait time,AI,33.10s,35.09s,39.01s
+oneintersection_3direction,avg wait time,AI vs Fixed time,-71.99%,-69.94%,-49.59%
+oneintersection_3direction,saturation,fixed time (Quang),0.0527,0.2308,0.5029
+oneintersection_3direction,saturation,AI,0.0432,0.1985,0.4203
+oneintersection_3direction,saturation,AI vs Fixed time,18.05%,13.99%,16.44%
+oneintersection_4direction,queue length,fixed time (Quang),3.6427,17.0670,31.1752
+oneintersection_4direction,queue length,AI,5.1398,17.7593,31.5123
+oneintersection_4direction,queue length,AI vs Fixed time,-41.10%,-4.06%,-1.08%
+oneintersection_4direction,avg wait time,fixed time (Quang),33.00s,38.84s,58.29s
+oneintersection_4direction,avg wait time,AI,46.39s,51.54s,61.33s
+oneintersection_4direction,avg wait time,AI vs Fixed time,-40.58%,-32.71%,-5.23%
+oneintersection_4direction,saturation,fixed time (Quang),0.1230,0.4150,0.7690
+oneintersection_4direction,saturation,AI,0.1000,0.3429,0.5279
+oneintersection_4direction,saturation,AI vs Fixed time,18.69%,17.38%,31.35%
+oneintersection_5direction,queue length,fixed time (Quang),3.3529,14.0346,32.1660
+oneintersection_5direction,queue length,AI,5.8864,26.6049,54.7064
+oneintersection_5direction,queue length,AI vs Fixed time,-75.56%,-89.57%,-70.08%
+oneintersection_5direction,avg wait time,fixed time (Quang),53.84s,62.46s,74.07s
+oneintersection_5direction,avg wait time,AI,86.79s,91.18s,95.77s
+oneintersection_5direction,avg wait time,AI vs Fixed time,-61.18%,-45.99%,-29.30%
+oneintersection_5direction,saturation,fixed time (Quang),0.0837,0.3731,0.6945
+oneintersection_5direction,saturation,AI,0.1019,0.4074,0.6998
+oneintersection_5direction,saturation,AI vs Fixed time,-21.82%,-9.21%,-0.77%

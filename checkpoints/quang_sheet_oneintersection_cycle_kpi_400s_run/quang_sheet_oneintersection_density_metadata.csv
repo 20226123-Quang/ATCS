@@ -1,0 +1,10 @@
+family,density,demand_factor_vs_normal,vehicles_within_window
+oneintersection_3direction,few,0.2591240875912409,42
+oneintersection_3direction,normal,1.0,161
+oneintersection_3direction,crowded,2.021897810218978,324
+oneintersection_4direction,few,0.2591240875912409,56
+oneintersection_4direction,normal,1.0,214
+oneintersection_4direction,crowded,2.021897810218978,432
+oneintersection_5direction,few,0.2591240875912409,69
+oneintersection_5direction,normal,1.0,267
+oneintersection_5direction,crowded,2.021897810218978,540
