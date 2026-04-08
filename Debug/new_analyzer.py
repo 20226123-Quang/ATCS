@@ -4,7 +4,7 @@ import os
 
 def analyze_all_data_kpis(folder_path="."):
     # 1. Tìm tất cả các file *_in_ngabavoi.csv hoặc tương tự
-    all_files = glob.glob(os.path.join(folder_path, "*_debug_ngabavoi.csv"))
+    all_files = glob.glob(os.path.join(folder_path, "*_*_ngabavoi.csv"))
     
     if not all_files:
         print(f"[-] Không tìm thấy file dữ liệu nào tại: {os.path.abspath(folder_path)}")
@@ -18,22 +18,28 @@ def analyze_all_data_kpis(folder_path="."):
             df = pd.read_csv(filename)
             if df.empty: continue
 
-            df_to_analyze = df.copy()
+            # LỌC DỮ LIỆU: Chỉ giữ lại các chu kỳ mà làn đường thực sự có xe
+            # Điều kiện: Có xe mới vào (Inflow > 0) HOẶC vẫn còn xe đang chờ từ chu kỳ trước (Residual > 0)
+            df_active = df[(df['Inflow_PCU_h'] > 0) | (df['Residual_NGE'] > 0.01)].copy()
+            
+            if df_active.empty: 
+                print(f"[!] File {os.path.basename(filename)} không có chu kỳ nào có hoạt động.")
+                continue
 
             # Xác định kịch bản từ tên file
             case_name = os.path.basename(filename).replace(".csv", "").upper()
             
-            # Tính toán các chỉ số trung bình dựa trên cơ chế tồn dư mới
+            # Tính toán các chỉ số trung bình dựa trên các chu kỳ "thực"
             metrics = {
                 "Scenario": case_name,
-                "Avg_Delay_s": df_to_analyze['Delay_s'].mean(),
-                "Avg_Saturation": df_to_analyze['Saturation'].mean(),
-                "Avg_Queue_Veh": df_to_analyze['Avg_Queue_Veh'].mean(),
-                "Avg_Inflow_PCU": df_to_analyze['Inflow_PCU_h'].mean(),
-                "Avg_TotalDemand": df_to_analyze['TotalDemand_h'].mean(),
-                "Avg_Residual_NGE": df_to_analyze['Residual_NGE'].mean(),
-                "Avg_Capacity": df_to_analyze['Capacity_h'].mean(),
-                "Total_Cycles": len(df_to_analyze) // df_to_analyze['Lane'].nunique() # Ước tính số chu kỳ
+                "Avg_Delay_s": df_active['Delay_s'].mean(),
+                "Avg_Saturation": df_active['Saturation'].mean(),
+                "Avg_Queue_Veh": df_active['Avg_Queue_Veh'].mean(),
+                "Avg_Inflow_PCU": df_active['Inflow_PCU_h'].mean(),
+                "Avg_TotalDemand": df_active['TotalDemand_h'].mean(),
+                "Avg_Residual_NGE": df_active['Residual_NGE'].mean(),
+                "Avg_Capacity": df_active['Capacity_h'].mean(),
+                "Active_Records": len(df_active)
             }
             summary_results.append(metrics)
             
@@ -62,8 +68,8 @@ def analyze_all_data_kpis(folder_path="."):
     print("="*125 + "\n")
 
     # Xuất file báo cáo tổng hợp mới
-    summary_df.to_csv("summary_analyzer_ngabavoi.csv", index=False)
-    print("[*] Đã lưu báo cáo phân tích tại: summary_analyzer_ngabavoi.csv")
+    summary_df.to_csv("all_ngabavoi.csv", index=False)
+    print("[*] Đã lưu báo cáo phân tích tại: all_ngabavoi.csv")
 
 if __name__ == "__main__":
     analyze_all_data_kpis()

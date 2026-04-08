@@ -22,8 +22,6 @@ TLS_ID = cfg['cabinet_info']['tls_id_sumo']
 CROSS_ID = cfg['cabinet_info']['cross_id'] # Ví dụ: 01
 # Đổi lại lamp_range
 LAMP_RANGE = range(16, 25) 
-STEP_LEN = 0.5 
-CYCLE_LEN_INPUT = float(cfg['cabinet_info']['cycle_length_default'])
 
 mapper = LampMapper()
 # Khởi tạo Engine với tham số constants từ file JSON Master
@@ -31,10 +29,40 @@ engine = KPIEngine(cfg['kpi_constants'])
 
 shared_lamp_status = {} 
 status_lock = threading.Lock()
-last_export_time = -1
-# ==========================================
 
-# --- 1. LOGIC GỬI DETECTOR (TCP) - GIỮ NGUYÊN CLASS CỦA BẠN ---
+class CycleDetector:
+    def __init__(self):
+        self.first_state = None
+        self.last_state = None
+        self.start_time = 0
+        self.has_changed = False
+
+    def check_cycle(self, current_state, current_time):
+        if not current_state:
+            return None
+        
+        if self.first_state is None:
+            self.first_state = current_state
+            self.last_state = current_state
+            self.start_time = current_time
+            print(f"[*] Cycle Detection Started: First State captured at {current_time}s")
+            return None
+        
+        if current_state != self.last_state:
+            self.last_state = current_state
+            self.has_changed = True
+            
+            # Kiểm tra quay lại trạng thái đầu tiên
+            if current_state == self.first_state and self.has_changed:
+                duration = current_time - self.start_time
+                # Ràng buộc chu kỳ tối thiểu 10s để không nhầm với vàng/đỏ
+                if duration >= 20.0:
+                    self.start_time = current_time
+                    self.has_changed = False
+                    return duration
+        return None
+
+# --- 1. LOGIC GỬI DETECTOR (TCP) ---
 class FamaDetectorBridge:
     def __init__(self, json_path):
         with open(json_path, 'r') as f:
@@ -53,7 +81,6 @@ class FamaDetectorBridge:
         except: return False
 
     def send_signal(self, channel, status):
-        # Giữ nguyên cấu trúc gói tin TCP có checksum của Quyên
         id_dev, ver, op, obj = 0x05, 0x10, 0x82, 0x08
         checksum = id_dev ^ ver ^ op ^ obj ^ channel ^ status
         packet = bytes([0x7E, id_dev, ver, op, obj, channel, status, checksum, 0x7E])
@@ -61,13 +88,11 @@ class FamaDetectorBridge:
             self.client.send(packet)
         except: pass
 
-# --- 2. Logic truy vấn light group status 
+# --- 2. Logic truy vấn light group status ---
 def thread_sequential_query():
     global shared_lamp_status
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(0.3)
-    
-    # ĐÚNG VỊ TRÍ: CROSS_ID nằm sau byte 03
     base_payload = f"00 13 01 00 01 00 00 00 03 {CROSS_ID} 01 10 01 01 04 03 03 02"
 
     while True:
@@ -90,36 +115,39 @@ def thread_sequential_query():
 
 # --- 3. CHẠY MÔ PHỎNG ---
 def run():
-    global last_export_time
-    # Khởi tạo Detector Bridge từ file config_master.json
     det_bridge = FamaDetectorBridge('config_master.json')
     det_connected = det_bridge.connect()
 
-    # Khởi động luồng truy vấn đèn
     threading.Thread(target=thread_sequential_query, daemon=True).start()
     
-    traci.start(["sumo-gui", "-c", "nga3.sumocfg", "--start", "--step-length", str(STEP_LEN)])
+    traci.start(["sumo-gui", "-c", "nga3.sumocfg", "--start"])
     
-    # Mở file CSV để ghi kết quả crowd_ad_ngabavoi.csv
-    csv_f = open(f"few_ad_next_nga3.csv", "w", newline="")
+    csv_f = open(f"few_ad_nga3.csv", "w", newline="")
     writer = csv.writer(csv_f)
-    # Header khớp hoàn toàn với LaneKPI trong kpi_engine.py của bạn
-    writer.writerow(["Time", "Lane", "Delay_s", "Saturation", "Queue_m", "Inflow_PCU_h", "Outflow_PCU_h", "Avg_Queue"])
+    # Header mới: Bỏ Queue_m, thêm TotalDemand_h
+    writer.writerow(["Time", "Lane", "Delay_s", "Saturation", "Avg_Queue_Veh", "Inflow_PCU_h", "TotalDemand_h", "Capacity_h", "Residual_NGE"])
 
-    # controlled_lanes = traci.trafficlight.getControlledLanes(TLS_ID)
     last_applied_state = ""
+    cycle_detector = CycleDetector()
 
-    #debug phần tính kpi
     all_lanes = traci.trafficlight.getControlledLanes(TLS_ID)
     unique_lanes = list(dict.fromkeys(all_lanes))
-    lane_to_indices = {lane: [i for i, l in enumerate(all_lanes) if l == lane] for lane in unique_lanes}
+    
+    lane_to_indices = {}
+    links = traci.trafficlight.getControlledLinks(TLS_ID)
+    for i, link_list in enumerate(links):
+        if not link_list: continue
+        from_lane = link_list[0][0]
+        if from_lane not in lane_to_indices:
+            lane_to_indices[from_lane] = []
+        lane_to_indices[from_lane].append(i)
 
     try:
         while traci.simulation.getMinExpectedNumber() > 0:
             traci.simulationStep()
             curr_time = traci.simulation.getTime()
+            delta_t = traci.simulation.getDeltaT()
 
-            # A. ĐỒNG BỘ ĐÈN (TỦ -> SUMO)
             with status_lock:
                 local_status = shared_lamp_status.copy()
             if local_status:
@@ -128,93 +156,57 @@ def run():
                     traci.trafficlight.setRedYellowGreenState(TLS_ID, new_state)
                     last_applied_state = new_state
 
-            # B. GỬI TÍN HIỆU DETECTOR (MAP THEO PHA TRONG TỦ)
             if det_connected:
                 for det_id, channel in det_bridge.mapping.items():
                     try:
-                        # Kiểm tra xe trên Lane Area Detector (E2)
                         is_occupied = traci.lanearea.getLastStepVehicleNumber(det_id) > 0
                         if is_occupied != det_bridge.memory[det_id]:
-                            # Gửi trạng thái 0x01 (có xe) hoặc 0x00 (không xe)
                             det_bridge.send_signal(channel, 0x01 if is_occupied else 0x00)
                             det_bridge.memory[det_id] = is_occupied
                     except: pass
 
-            # # C. CẬP NHẬT DỮ LIỆU KPI MỖI BƯỚC NHẢY (0.5s)
-            # for lane in controlled_lanes:
-            #     # Lấy tập hợp ID xe hiện tại trên làn
-            #     v_ids = set(traci.lane.getLastStepVehicleIDs(lane))
-            #     idx = controlled_lanes.index(lane)
-            #     # Kiểm tra màu đèn từ chuỗi state hiện tại
-            #     is_green = last_applied_state[idx].lower() in ['g', 'u'] if last_applied_state else False
-                
-            #     # Cập nhật vào engine (Bản chuẩn truyền set v_ids)
-            #     engine.update_lane(lane, v_ids, is_green, STEP_LEN)
-
-            #Debug tính KPI
             for lane in unique_lanes:
-                # Lấy tập hợp ID xe trên làn thực tế (không bị đếm trùng)
-                v_ids = set(traci.lane.getLastStepVehicleIDs(lane))
+                v_ids = traci.lane.getLastStepVehicleIDs(lane)
                 
-                # Xác định trạng thái đèn Xanh: Chỉ cần 1 trong các index của lane này Xanh là tính là Xanh
-                is_green = False
+                v_movements = {} 
+                for v_id in v_ids:
+                    try:
+                        next_links = traci.vehicle.getNextLinks(v_id)
+                        for link in next_links:
+                            if link[5] == TLS_ID:
+                                v_movements[v_id] = link[6]
+                                break
+                    except: pass
+
+                link_green_status = {} 
                 if last_applied_state:
-                    for idx in lane_to_indices[lane]:
-                        if last_applied_state[idx].lower() in ['g', 'u']:
-                            is_green = True
-                            break
-                
-                # Cập nhật vào engine
-                engine.update_lane(lane, v_ids, is_green, STEP_LEN)
+                    for idx in lane_to_indices.get(lane, []):
+                        if idx < len(last_applied_state):
+                            link_green_status[idx] = last_applied_state[idx].lower() in ['g', 'u']
 
-            # # D. XUẤT KPI THEO CHU KỲ (DÙNG CYCLE_LEN_INPUT)
-            # curr_time_int = int(curr_time)
-            # if curr_time_int % int(CYCLE_LEN_INPUT) == 0 and curr_time_int > 0 and curr_time_int != last_export_time:
-            #     for lane in controlled_lanes:
-            #         # Gọi compute_kpi với chu kỳ thực tế bạn nhập
-            #         res = engine.compute_kpi(lane, CYCLE_LEN_INPUT)
-                    
-            #         # Ghi 8 cột dữ liệu chuẩn LaneKPI của bạn
-            #         writer.writerow([
-            #             curr_time_int, 
-            #             lane, 
-            #             round(res.control_delay_seconds, 2), 
-            #             round(res.degree_of_saturation, 2),
-            #             round(res.queue_length_meters, 2),
-            #             round(res.inflow_pcu_per_hour, 2),
-            #             round(res.outflow_pcu_per_hour, 2),
-            #             round(res.avg_queue_vehicles, 2)
-            #         ])
-            #         # Reset dữ liệu để tính chu kỳ tiếp theo
-            #         engine.reset_cycle(lane)
-                
-            #     last_export_time = curr_time_int
-            #     print(f"[*] KPI Exported at {curr_time_int}s | Cycle: {CYCLE_LEN_INPUT}s")
+                engine.update_lane(lane, v_ids, v_movements, link_green_status, delta_t)
 
-            #Debug tính KPI
-            curr_time_int = int(curr_time)
-            if curr_time_int % int(CYCLE_LEN_INPUT) == 0 and curr_time_int > 0 and curr_time_int != last_export_time:
-                for lane in unique_lanes:
-                    # Tính toán KPI cho làn duy nhất
-                    res = engine.compute_kpi(lane, CYCLE_LEN_INPUT)
-                    
-                    # Ghi dữ liệu chuẩn 8 cột
-                    writer.writerow([
-                        curr_time_int, 
-                        lane, 
-                        round(res.control_delay_seconds, 2), 
-                        round(res.degree_of_saturation, 2),
-                        round(res.queue_length_meters, 2),
-                        round(res.inflow_pcu_per_hour, 2),
-                        round(res.outflow_pcu_per_hour, 2),
-                        round(res.avg_queue_vehicles, 2)
-                    ])
-                    # Reset dữ liệu cho chu kỳ mới
-                    engine.reset_cycle(lane)
-                
-                last_export_time = curr_time_int
-                print(f"[*] KPI Exported for {len(unique_lanes)} unique lanes at {curr_time_int}s")
-            time.sleep(0.01)
+            if last_applied_state:
+                cycle_duration = cycle_detector.check_cycle(last_applied_state, curr_time)
+                if cycle_duration:
+                    print(f"[*] Cycle detected: {cycle_duration}s at {curr_time}s")
+                    for lane in unique_lanes:
+                        res = engine.compute_kpi(lane, cycle_duration)
+                        writer.writerow([
+                            int(curr_time), 
+                            lane, 
+                            round(res.control_delay_seconds, 2), 
+                            round(res.degree_of_saturation, 2),
+                            round(res.avg_queue_vehicles, 2),
+                            round(res.inflow_pcu_per_hour, 2),
+                            round(res.total_demand_pcu_h, 2),
+                            round(res.capacity_pcu_h, 2),
+                            round(res.n_ge, 2)
+                        ])
+                        engine.reset_cycle(lane, res.n_ge)
+                    csv_f.flush()
+
+            time.sleep(0.005)
 
     except Exception as e:
         print(f"[ERROR] {e}")

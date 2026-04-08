@@ -119,7 +119,7 @@ def run():
     
     traci.start(["sumo-gui", "-c", "ngabavoi.sumocfg", "--start"])
     
-    csv_f = open(f"ad_debug_ngabavoi.csv", "w", newline="")
+    csv_f = open(f"few_ad_ngabavoi.csv", "w", newline="")
     writer = csv.writer(csv_f)
     # Header mới: Bỏ Queue_m, thêm TotalDemand_h
     writer.writerow(["Time", "Lane", "Delay_s", "Saturation", "Avg_Queue_Veh", "Inflow_PCU_h", "TotalDemand_h", "Capacity_h", "Residual_NGE"])
