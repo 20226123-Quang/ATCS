@@ -1,0 +1,55 @@
+direction,density,metric,baseline,baseline_value,ai_value,improvement_pct
+3direction,crowded,queue length,Fixed time,8.3799,8.0136,4.371173880356555
+3direction,crowded,avg wait time,Fixed time,29.37,26.7,9.090909090909097
+3direction,crowded,queue length,Inductive,8.266,8.0136,3.053472054197916
+3direction,crowded,avg wait time,Inductive,27.556,26.7,3.106401509653076
+3direction,crowded,queue length,Adaptive,7.5867,8.0136,-5.626952429910235
+3direction,crowded,avg wait time,Adaptive,26.4125,26.7,-1.0884997633696085
+3direction,normal,queue length,Fixed time,3.6716,3.1041,15.456476740385671
+3direction,normal,avg wait time,Fixed time,18.52,16.84,9.071274298056155
+3direction,normal,queue length,Inductive,3.32422222,3.1041,6.621766098416848
+3direction,normal,avg wait time,Inductive,16.59822222,16.84,-1.4566486506528986
+3direction,normal,queue length,Adaptive,3.36888889,3.1041,7.8598285264314605
+3direction,normal,avg wait time,Adaptive,18.02222222,16.84,6.559802701178767
+3direction,few,queue length,Fixed time,0.865,0.897,-3.699421965317922
+3direction,few,avg wait time,Fixed time,14.11,12.83,9.071580439404674
+3direction,few,queue length,Inductive,0.9134482759,0.897,1.8006795057764886
+3direction,few,avg wait time,Inductive,12.56034483,12.83,-2.146877125187972
+3direction,few,queue length,Adaptive,1.138695652,0.897,21.225658636307852
+3direction,few,avg wait time,Adaptive,14.66,12.83,12.482946793997272
+4direction,crowded,queue length,Fixed time,4.0985,3.5869,12.482615591069896
+4direction,crowded,avg wait time,Fixed time,10.54,10.25,2.7514231499051154
+4direction,crowded,queue length,Inductive,4.84333333,3.5869,25.94150029314625
+4direction,crowded,avg wait time,Inductive,11.08566667,10.25,7.538262649205202
+4direction,crowded,queue length,Adaptive,4.0028,3.5869,10.390226841211145
+4direction,crowded,avg wait time,Adaptive,9.8907,10.25,-3.6327054707957904
+4direction,normal,queue length,Fixed time,1.6427,3.1398,-91.13654349546478
+4direction,normal,avg wait time,Fixed time,7.75,6.53,15.741935483870964
+4direction,normal,queue length,Inductive,1.762,3.1398,-78.19523269012485
+4direction,normal,avg wait time,Inductive,9.230666667,6.53,29.25754730863579
+4direction,normal,queue length,Adaptive,1.7692,3.1398,-77.47004295726882
+4direction,normal,avg wait time,Adaptive,9.4096,6.53,30.602788641387512
+4direction,few,queue length,Fixed time,0.118,0.0946,19.830508474576263
+4direction,few,avg wait time,Fixed time,6.36,6.99,-9.905660377358489
+4direction,few,queue length,Inductive,0.6857,0.0946,86.20387924748431
+4direction,few,avg wait time,Inductive,7.6551,6.99,8.688325430105417
+4direction,few,queue length,Adaptive,0.5893,0.0946,83.9470558289496
+4direction,few,avg wait time,Adaptive,6.808,6.99,-2.673325499412462
+5direction,crowded,queue length,Fixed time,25.534,23.4142,8.301872013785532
+5direction,crowded,avg wait time,Fixed time,105.4,100.0,5.123339658444028
+5direction,crowded,queue length,Inductive,24.6693,23.4142,5.0877000968815445
+5direction,crowded,avg wait time,Inductive,109.7478,100.0,8.882000368116717
+5direction,crowded,queue length,Adaptive,24.4618,23.4142,4.282595720674681
+5direction,crowded,avg wait time,Adaptive,109.3127,100.0,8.519321176770864
+5direction,normal,queue length,Fixed time,7.777,7.1461,8.112382666838117
+5direction,normal,avg wait time,Fixed time,55.8,50.73,9.086021505376344
+5direction,normal,queue length,Inductive,7.6153,7.1461,6.16128057988524
+5direction,normal,avg wait time,Inductive,53.6867,50.73,5.50732304276479
+5direction,normal,queue length,Adaptive,7.9367,7.1461,9.961318936081751
+5direction,normal,avg wait time,Adaptive,51.192,50.73,0.9024847632442634
+5direction,few,queue length,Fixed time,1.7858,1.253,29.8353679023407
+5direction,few,avg wait time,Fixed time,39.7,33.67,15.18891687657431
+5direction,few,queue length,Inductive,1.8747,1.253,33.16263935563024
+5direction,few,avg wait time,Inductive,42.2243,33.67,20.25918724525924
+5direction,few,queue length,Adaptive,1.7555,1.253,28.624323554542876
+5direction,few,avg wait time,Adaptive,36.851,33.67,8.63205883151067

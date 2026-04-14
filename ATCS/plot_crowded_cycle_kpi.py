@@ -79,24 +79,10 @@ def initialize_acac(obs_dim, action_dim, tls_names, device="cpu"):
 
 @dataclass
 class LaneCycleState:
-    previous_vehicle_ids: Set[str] = field(default_factory=set)
-    vehicle_link_index: Dict[str, int] = field(default_factory=dict)
-    v_ids_in_cycle: Set[str] = field(default_factory=set)
-    queue_integral: float = 0.0
-    lane_green_seconds: float = 0.0
     waiting_time_total: float = 0.0
-    inflow_pcu_by_link: Dict[int, float] = field(default_factory=lambda: defaultdict(float))
-    outflow_pcu_by_link: Dict[int, float] = field(default_factory=lambda: defaultdict(float))
-    green_seconds_by_link: Dict[int, float] = field(default_factory=lambda: defaultdict(float))
 
     def reset_cycle(self) -> None:
-        self.v_ids_in_cycle.clear()
-        self.queue_integral = 0.0
-        self.lane_green_seconds = 0.0
         self.waiting_time_total = 0.0
-        self.inflow_pcu_by_link.clear()
-        self.outflow_pcu_by_link.clear()
-        self.green_seconds_by_link.clear()
 
 
 @dataclass(frozen=True)
@@ -115,6 +101,8 @@ class LaneCycleKPI:
     mixed_saturation_flow_pcu_per_hour: float
     outflow_pcu_per_cycle: float
     inflow_pcu_per_cycle: float
+    total_demand_pcu_per_hour: float
+    residual_n_ge_vehicles: float
     observed_avg_wait_seconds: float
 
 
@@ -161,93 +149,23 @@ class CycleKPICollector:
         self.rows = []
         self.cycle_counter_by_tls = defaultdict(int)
         self.lane_states = {
-            lane_id: LaneCycleState(
-                previous_vehicle_ids=set(traci.lane.getLastStepVehicleIDs(lane_id))
-            )
+            lane_id: LaneCycleState()
             for tls_id in env.tls_ids
             for lane_id in env.lanes_by_tls.get(tls_id, [])
         }
-
-    def _lane_saturation_flow(self, lane_id: str) -> float:
-        eps = self.constants.epsilon
-        lane_width_m = None
-        if self.env is not None:
-            lane_width_m = self.env.lane_width_m.get(lane_id)
-        f_b_nomograph = KPIEngine._lane_width_adjustment_factor(lane_width_m)
-        f_b = max(self.constants.saturation_headway_f_b * f_b_nomograph, eps)
-        f_r = max(self.constants.saturation_headway_f_r, eps)
-        f_d = max(self.constants.saturation_headway_f_d, eps)
-        f1 = max(f_b, f_r, f_d)
-        f2 = min(1.0, f_d)
-        t_h = max(
-            self.constants.saturation_headway_f_hv
-            * f1
-            * f2
-            * self.constants.saturation_headway_base_seconds,
-            eps,
-        )
-        return 3600.0 / t_h
 
     def on_simulation_step(self) -> None:
         if self.env is None:
             return
         for tls_id in self.env.tls_ids:
-            runtime = self.env.tls_runtime[tls_id]
-            phase_state = self.env.tls_programs[tls_id].phases[runtime.current_phase_index].state
-            lane_index_map = self.env.lane_link_indices.get(tls_id, {})
             for lane_id in self.env.lanes_by_tls.get(tls_id, []):
                 state = self.lane_states[lane_id]
-                current_vehicle_ids = set(traci.lane.getLastStepVehicleIDs(lane_id))
-                state.queue_integral += (
-                    float(traci.lane.getLastStepHaltingNumber(lane_id)) * self.step_length_seconds
-                )
                 try:
                     state.waiting_time_total += (
                         float(traci.lane.getWaitingTime(lane_id)) * self.step_length_seconds
                     )
                 except Exception:
                     pass
-
-                lane_has_green = False
-                for link_index in lane_index_map.get(lane_id, []):
-                    if link_index < len(phase_state) and phase_state[link_index] in ("G", "g", "u"):
-                        state.green_seconds_by_link[link_index] += self.step_length_seconds
-                        lane_has_green = True
-                if lane_has_green:
-                    state.lane_green_seconds += self.step_length_seconds
-
-                entered = current_vehicle_ids - state.previous_vehicle_ids
-                exited = state.previous_vehicle_ids - current_vehicle_ids
-
-                for vehicle_id in entered:
-                    if vehicle_id in state.v_ids_in_cycle:
-                        continue
-                    link_index = _vehicle_tls_index(vehicle_id, tls_id)
-                    if link_index is None:
-                        lane_links = lane_index_map.get(lane_id, [])
-                        if len(lane_links) == 1:
-                            link_index = lane_links[0]
-                    if link_index is None:
-                        continue
-                    state.vehicle_link_index[vehicle_id] = link_index
-                    state.v_ids_in_cycle.add(vehicle_id)
-                    state.inflow_pcu_by_link[link_index] += _vehicle_pcu(self.constants, vehicle_id)
-
-                for vehicle_id in exited:
-                    link_index = state.vehicle_link_index.pop(vehicle_id, None)
-                    if link_index is None:
-                        lane_links = lane_index_map.get(lane_id, [])
-                        if len(lane_links) == 1:
-                            link_index = lane_links[0]
-                    if link_index is None:
-                        continue
-                    state.outflow_pcu_by_link[link_index] += _vehicle_pcu(
-                        self.constants,
-                        vehicle_id,
-                        fallback_only=True,
-                    )
-
-                state.previous_vehicle_ids = current_vehicle_ids
 
     def on_cycle_end(self, tls_id: str, cycle_length_seconds: float) -> None:
         if self.env is None:
@@ -266,12 +184,12 @@ class CycleKPICollector:
             cycle_length = max(float(runtime.cycle_elapsed_seconds), self.step_length_seconds)
             has_cycle_data = any(
                 (
-                    state.queue_integral > 0.0
-                    or state.lane_green_seconds > 0.0
-                    or sum(state.inflow_pcu_by_link.values()) > 0.0
-                    or sum(state.outflow_pcu_by_link.values()) > 0.0
+                    self.env.kpi_engine.get_lane_stats(lane_id).cycle_steps > 0
+                    or self.env.kpi_engine.get_lane_stats(lane_id).green_seconds > 0.0
+                    or self.env.kpi_engine.get_lane_stats(lane_id).cycle_inflow_pcu > 0.0
+                    or self.env.kpi_engine.get_lane_stats(lane_id).cycle_outflow_pcu > 0.0
                 )
-                for lane_id, state in self.lane_states.items()
+                for lane_id in self.lane_states
                 if lane_id in self.env.lanes_by_tls.get(tls_id, [])
             )
             if not has_cycle_data:
@@ -288,60 +206,22 @@ class CycleKPICollector:
 
         for lane_id in self.env.lanes_by_tls.get(tls_id, []):
             state = self.lane_states[lane_id]
-            total_outflow = float(sum(state.outflow_pcu_by_link.values()))
-            total_inflow = float(sum(state.inflow_pcu_by_link.values()))
-            q_h = total_outflow * 3600.0 / cycle_length
-
-            if total_outflow > eps:
-                ratios = {
-                    idx: flow / total_outflow
-                    for idx, flow in state.outflow_pcu_by_link.items()
-                    if flow > eps
-                }
-            else:
-                flow_base = max(total_inflow, eps)
-                ratios = {
-                    idx: flow / flow_base
-                    for idx, flow in state.inflow_pcu_by_link.items()
-                    if flow > eps
-                }
-            if not ratios:
-                lane_links = self.env.lane_link_indices.get(tls_id, {}).get(lane_id, [])
-                if lane_links:
-                    ratio_value = 1.0 / len(lane_links)
-                    ratios = {idx: ratio_value for idx in lane_links}
-
-            lane_sat = self._lane_saturation_flow(lane_id)
-            denominator = sum(ratio / max(lane_sat, eps) for ratio in ratios.values())
-            mixed_sat = 1.0 / max(denominator, 1.0 / max(lane_sat, eps))
-            green_ratio = min(max(state.lane_green_seconds / cycle_length, 0.0), 0.999)
-            capacity = mixed_sat * max(green_ratio, eps)
-            x_val = q_h / max(capacity, eps)
-
-            m_max = state.lane_green_seconds * mixed_sat / 3600.0
-            m_tb = q_h * cycle_length / 3600.0
-            if x_val <= 0.65:
-                n_ge = 0.0
-            elif x_val <= 0.9:
-                val_09 = 1.0 / max(0.26 + m_tb / 150.0, eps)
-                n_ge = (x_val - 0.65) / 0.25 * val_09
-            elif x_val <= 1.0:
-                val_09 = 1.0 / max(0.26 + m_tb / 150.0, eps)
-                val_10 = 0.545 * (max(m_max, 0.0) ** 0.5)
-                n_ge = val_09 + (x_val - 0.9) / 0.1 * (val_10 - val_09)
-            elif x_val <= 1.2:
-                val_10 = 0.545 * (max(m_max, 0.0) ** 0.5)
-                val_12 = (m_max * 0.2 + 5.0) / 2.0
-                n_ge = val_10 + (x_val - 1.0) / 0.2 * (val_12 - val_10)
-            else:
-                n_ge = m_max * (x_val - 1.0) / 2.0
-
-            q_over_s = min(q_h / max(mixed_sat, eps), 0.99)
-            t_w1 = (cycle_length * (1.0 - green_ratio) ** 2) / (
-                2.0 * max(1.0 - q_over_s, eps)
+            stats = self.env.kpi_engine.get_lane_stats(lane_id)
+            lane_kpi = self.env.kpi_engine.compute_lane_kpis(
+                lane_id,
+                cycle_length_seconds=cycle_length,
+                green_floor_seconds=float(self.step_length_seconds),
+                lane_width_m=self.env.lane_width_m.get(lane_id),
             )
-            t_w2 = (3600.0 * max(n_ge, 0.0)) / max(capacity, eps)
-            delay = min(t_w1 + t_w2, self.constants.max_control_delay_seconds)
+            total_outflow = float(stats.cycle_outflow_pcu)
+            total_inflow = float(stats.cycle_inflow_pcu)
+            q_h = total_outflow * 3600.0 / cycle_length
+            green_ratio = min(max(float(stats.green_seconds) / cycle_length, 0.0), 0.999)
+            mixed_sat = (
+                lane_kpi.capacity_pcu_per_hour / max(green_ratio, eps)
+                if green_ratio > eps
+                else 0.0
+            )
 
             self.rows.append(
                 LaneCycleKPI(
@@ -350,17 +230,17 @@ class CycleKPICollector:
                     lane_id=lane_id,
                     cycle_index=cycle_index,
                     cycle_length_seconds=cycle_length,
-                    queue_length_meters=(
-                        state.queue_integral / cycle_length * self.constants.average_vehicle_space_meter
-                    ),
-                    control_delay_seconds=float(delay),
-                    degree_of_saturation=float(x_val),
+                    queue_length_meters=float(lane_kpi.queue_length_meters),
+                    control_delay_seconds=float(lane_kpi.control_delay_seconds),
+                    degree_of_saturation=float(lane_kpi.degree_of_saturation),
                     q_h_pcu_per_hour=float(q_h),
                     lane_green_ratio=float(green_ratio),
-                    lane_green_seconds=float(state.lane_green_seconds),
+                    lane_green_seconds=float(stats.green_seconds),
                     mixed_saturation_flow_pcu_per_hour=float(mixed_sat),
                     outflow_pcu_per_cycle=float(total_outflow),
                     inflow_pcu_per_cycle=float(total_inflow),
+                    total_demand_pcu_per_hour=float(lane_kpi.total_demand_pcu_per_hour),
+                    residual_n_ge_vehicles=float(lane_kpi.residual_n_ge_vehicles),
                     observed_avg_wait_seconds=float(state.waiting_time_total / max(cycle_length, eps)),
                 )
             )
@@ -394,9 +274,12 @@ class InstrumentedTrafficEnvironment(TrafficEnvironment):
             if wrapped_cycle:
                 if self.collector is not None:
                     self.collector.on_cycle_end(tls_id, float(runtime.cycle_length_seconds))
+                self._finalize_cycle_kpis(
+                    tls_id,
+                    float(runtime.cycle_length_seconds),
+                )
                 runtime.cycle_elapsed_seconds = 0
                 runtime.cycle_length_seconds = program.base_cycle_seconds
-                self._reset_cycle_lane_metrics(tls_id)
 
             phase = program.phases[next_index]
             runtime.remaining_phase_seconds = max(int(phase.duration_seconds), 0)

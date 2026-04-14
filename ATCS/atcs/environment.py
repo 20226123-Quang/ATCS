@@ -359,9 +359,14 @@ class TrafficEnvironment:
             self._reset_phase_lane_metrics(tls_id)
             self.required_action.add(tls_id)
 
-    def _reset_cycle_lane_metrics(self, tls_id: str) -> None:
+    def _reset_cycle_lane_metrics(
+        self, tls_id: str, last_n_ge_by_lane: Optional[Dict[str, float]] = None
+    ) -> None:
         for lane_id in self.lanes_by_tls.get(tls_id, []):
-            self.kpi_engine.start_new_cycle(lane_id)
+            last_n_ge = None
+            if last_n_ge_by_lane is not None:
+                last_n_ge = float(last_n_ge_by_lane.get(lane_id, 0.0))
+            self.kpi_engine.reset_cycle(lane_id, last_n_ge)
 
     def _reset_phase_lane_metrics(self, tls_id: str) -> None:
         for lane_id in self.lanes_by_tls.get(tls_id, []):
@@ -448,6 +453,22 @@ class TrafficEnvironment:
         for lane_id in self._green_lanes_for_phase(tls_id, phase_state):
             self.kpi_engine.snapshot_green_end_queue(lane_id)
 
+    def _finalize_cycle_kpis(self, tls_id: str, cycle_length_seconds: float) -> None:
+        last_n_ge_by_lane: Dict[str, float] = {}
+        cycle_length = max(float(cycle_length_seconds), float(self.step_length_seconds))
+        for lane_id in self.lanes_by_tls.get(tls_id, []):
+            lane_kpi = self.kpi_engine.compute_lane_kpis(
+                lane_id,
+                cycle_length_seconds=cycle_length,
+                green_floor_seconds=float(self.step_length_seconds),
+                lane_width_m=self.lane_width_m.get(lane_id),
+            )
+            last_n_ge_by_lane[lane_id] = max(
+                float(lane_kpi.residual_n_ge_vehicles),
+                0.0,
+            )
+        self._reset_cycle_lane_metrics(tls_id, last_n_ge_by_lane)
+
     def _advance_to_next_phase(self, tls_id: str) -> None:
         runtime = self.tls_runtime[tls_id]
         program = self.tls_programs[tls_id]
@@ -462,10 +483,13 @@ class TrafficEnvironment:
             runtime.current_phase_index = next_index
 
             if wrapped_cycle:
+                self._finalize_cycle_kpis(
+                    tls_id,
+                    float(runtime.cycle_length_seconds),
+                )
                 runtime.cycle_elapsed_seconds = 0
                 # Reset to the cycle length derived from the active program phases.
                 runtime.cycle_length_seconds = program.base_cycle_seconds
-                self._reset_cycle_lane_metrics(tls_id)
 
             phase = program.phases[next_index]
             runtime.remaining_phase_seconds = max(int(phase.duration_seconds), 0)
@@ -677,6 +701,7 @@ class TrafficEnvironment:
 
         controllable_lanes = {}
         remaining_cycle_info = {}
+        residual_nge_info = {}
 
         for tls_id in self.tls_ids:
             runtime = self.tls_runtime[tls_id]
@@ -684,6 +709,10 @@ class TrafficEnvironment:
                 0, runtime.cycle_length_seconds - runtime.cycle_elapsed_seconds
             )
             remaining_cycle_info[tls_id] = remaining
+            residual_nge_info[tls_id] = {
+                lane_id: float(self.kpi_engine.get_lane_stats(lane_id).residual_queue_vehicles)
+                for lane_id in self.lanes_by_tls.get(tls_id, [])
+            }
 
         for tls_id in self.required_action:
             runtime = self.tls_runtime[tls_id]
@@ -707,6 +736,8 @@ class TrafficEnvironment:
             "controllable_lanes": controllable_lanes,
             "controllable_intersections": controllable_lanes,
             "remaining_cycle": remaining_cycle_info,
+            "Residual_NGE": residual_nge_info,
+            "residual_nge": residual_nge_info,
             "lane_mask": self._lane_mask(),
         }
 

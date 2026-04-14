@@ -1,0 +1,19 @@
+direction,density,metric,unit,ai_value,Fixed time_value,AI_vs_Fixed time_improvement_percent,Inductive_value,AI_vs_Inductive_improvement_percent,Adaptive_value,AI_vs_Adaptive_improvement_percent
+Nga ba,crowded,Queue length,vehicle,8.013600,8.379900,4.37,8.268600,3.08,7.586700,-5.63
+Nga ba,crowded,Avg wait time,s,26.702000,29.370000,9.08,27.655600,3.45,26.412500,-1.10
+Nga ba,normal,Queue length,vehicle,3.104100,3.671600,15.46,3.324222,6.62,3.368889,7.86
+Nga ba,normal,Avg wait time,s,16.840000,18.520000,9.07,16.598222,-1.46,18.022222,6.56
+Nga ba,few,Queue length,vehicle,0.897000,0.886500,-1.18,0.913448,1.80,1.138696,21.23
+Nga ba,few,Avg wait time,s,12.830000,14.110000,9.07,12.560345,-2.15,14.660000,12.48
+Nga tu,crowded,Queue length,vehicle,3.586900,4.098500,12.48,4.884333,26.56,4.002800,10.39
+Nga tu,crowded,Avg wait time,s,10.250000,10.540000,2.75,11.085667,7.54,9.890700,-3.63
+Nga tu,normal,Queue length,vehicle,1.139800,1.642700,30.61,1.876200,39.25,1.769000,35.57
+Nga tu,normal,Avg wait time,s,6.530000,7.750000,15.74,9.230667,29.26,9.409600,30.60
+Nga tu,few,Queue length,vehicle,0.094600,0.111800,15.38,0.685700,86.20,0.589300,83.95
+Nga tu,few,Avg wait time,s,6.990000,6.360000,-9.91,7.655100,8.69,6.808000,-2.67
+Nga nam,crowded,Queue length,vehicle,23.412000,25.534000,8.31,24.669300,5.10,24.461800,4.29
+Nga nam,crowded,Avg wait time,s,100.000000,105.400000,5.12,109.747800,8.88,109.312700,8.52
+Nga nam,normal,Queue length,vehicle,7.146100,7.777000,8.11,7.615300,6.16,7.936700,9.96
+Nga nam,normal,Avg wait time,s,50.700000,55.800000,9.14,53.686700,5.56,51.192000,0.96
+Nga nam,few,Queue length,vehicle,1.253000,1.785800,29.84,1.874700,33.16,1.755500,28.62
+Nga nam,few,Avg wait time,s,33.670000,39.700000,15.19,44.281200,23.96,36.851000,8.63

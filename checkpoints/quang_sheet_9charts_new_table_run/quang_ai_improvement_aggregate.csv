@@ -1,0 +1,10 @@
+baseline,metric,mean_improvement_pct,win_count,loss_count,case_count
+Fixed time,queue length,0.39493686761889274,7,2,9
+Fixed time,avg wait time,7.246637791686911,8,1,9
+Fixed time,overall queue+wait,3.8207873296529016,15,3,18
+Inductive,queue length,9.981964949032665,8,1,9
+Inductive,avg wait time,8.848391308655485,7,2,9
+Inductive,overall queue+wait,9.415178128844074,15,3,18
+Adaptive,queue length,9.24377918411337,7,2,9
+Adaptive,avg wait time,6.700541352723499,6,3,9
+Adaptive,overall queue+wait,7.972160268418433,13,5,18
