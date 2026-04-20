@@ -1,13 +1,57 @@
 {
+    "kpi_constants": {
+        "t_h0": 1.8,
+        "f_hv": 1.1,
+        "f_b": 1.0,
+        "f_r": 1.0,
+        "f_d": 1.0,
+        "avg_veh_space": 7.5,
+        "epsilon": 1e-6,
+        "pcu_mapping": {
+            "car": 1.0,
+            "motorcycle": 0.5,
+            "truck": 2.0,
+            "bus": 2.5,
+            "car_van": 1.5
+        }
+    },
     "junctions": [
         {
             "name": "Nga 4 Quang Trung - Le Loi",
             "ip": "192.168.8.134",
-            "junction_type": "nga4qtllq",
+            "tls_id_sumo": "cluster5599998268_5599998291_7928757444_9323588912",
+            "junction_id": "nga4qtll",
+            "cross_id": "01",
             "tcp_port": 32002,
             "udp_port": 4050,
+            "lamp_groups": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             "detectors": { 
-                "e2_0": 2,
+                "e2_10": 6,
+                "e2_11": 5, 
+                "e2_12": 5, 
+                "e2_13": 4, 
+                "e2_14": 9, 
+                "e2_15": 8, 
+                "e2_16": 7, 
+                "e2_17": 12, 
+                "e2_18": 11, 
+                "e2_19": 10, 
+                "e2_20": 2, 
+                "e2_22": 2,
+                "e2_21": 3 
+            }
+        },
+        {
+            "name": "Nga Ba Voi",
+            "ip": "192.168.8.138",
+            "tls_id_sumo": "J0",
+            "junction_id": "ngabavoi",
+            "cross_id": "01",
+            "tcp_port": 32002,
+            "udp_port": 4050,
+            "lamp_groups": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            "detectors": { 
+                "e2_0": 2, 
                 "e2_1": 3,
                 "e2_2": 1,
                 "e2_3": 6,
@@ -17,28 +61,6 @@
                 "e2_7": 8,
                 "e2_8": 7,
                 "e2_9": 10
-            }
-        },
-        {
-            "name": "Nga Ba Voi",
-            "ip": "192.168.8.138",
-            "junction_type": "ngabavoi",
-            "tcp_port": 32002,
-            "udp_port": 4050,
-            "detectors": { 
-                "e2_10": 7,
-                "e2_11": 6,
-                "e2_12": 5,
-                "e2_13": 4,
-                "e2_14": 10,
-                "e2_15": 9,
-                "e2_16": 8,
-                "e2_17": 13,
-                "e2_18": 12,
-                "e2_19": 11,
-                "e2_20": 2,
-                "e2_21": 3,
-                "e2_22": 1
             }
         }
     ]

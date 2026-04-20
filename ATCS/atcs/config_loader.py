@@ -20,15 +20,14 @@ class SimulationSettings:
 
 @dataclass(frozen=True)
 class KPIConstants:
-    saturation_flow_pcu_per_hour_per_lane: float
+    saturation_headway_base_seconds: float
+    saturation_headway_f_hv: float
+    saturation_headway_f_b: float
+    saturation_headway_f_r: float
+    saturation_headway_f_d: float
     average_vehicle_space_meter: float
-    green_wave_pf_default: float
-    incremental_delay_k: float
-    incremental_delay_power: float
     epsilon: float
     max_control_delay_seconds: float
-    v_c_penalty_threshold: float
-    v_c_penalty_weight: float
     default_pcu: float
     pcu_mapping: Dict[str, float]
 
@@ -68,19 +67,28 @@ def load_kpi_config(config_path: Optional[str] = None) -> KPIConfig:
 
     constants_raw = raw.get("constants", {})
     constants = KPIConstants(
-        saturation_flow_pcu_per_hour_per_lane=float(
-            constants_raw.get("saturation_flow_pcu_per_hour_per_lane", 1900.0)
+        saturation_headway_base_seconds=float(
+            constants_raw.get("saturation_headway_base_seconds", 1.8)
+        ),
+        saturation_headway_f_hv=float(
+            constants_raw.get("saturation_headway_f_hv", 1.1)
+        ),
+        saturation_headway_f_b=float(
+            constants_raw.get("saturation_headway_f_b", 1.0)
+        ),
+        saturation_headway_f_r=float(
+            constants_raw.get("saturation_headway_f_r", 1.0)
+        ),
+        saturation_headway_f_d=float(
+            constants_raw.get("saturation_headway_f_d", 1.0)
         ),
         average_vehicle_space_meter=float(
             constants_raw.get("average_vehicle_space_meter", 6.5)
         ),
-        green_wave_pf_default=float(constants_raw.get("green_wave_pf_default", 1.0)),
-        incremental_delay_k=float(constants_raw.get("incremental_delay_k", 0.5)),
-        incremental_delay_power=float(constants_raw.get("incremental_delay_power", 2.0)),
         epsilon=float(constants_raw.get("epsilon", 1e-6)),
-        max_control_delay_seconds=float(constants_raw.get("max_control_delay_seconds", 300.0)),
-        v_c_penalty_threshold=float(constants_raw.get("v_c_penalty_threshold", 0.9)),
-        v_c_penalty_weight=float(constants_raw.get("v_c_penalty_weight", 12.0)),
+        max_control_delay_seconds=float(
+            constants_raw.get("max_control_delay_seconds", 300.0)
+        ),
         default_pcu=float(constants_raw.get("default_pcu", 1.0)),
         pcu_mapping={
             str(k).lower(): float(v)

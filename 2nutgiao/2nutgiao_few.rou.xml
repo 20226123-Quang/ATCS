@@ -1,0 +1,275 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="car" vClass="passenger" length="4.5" maxSpeed="16.67" accel="2.6" decel="4.5" sigma="0.5" color="0,120,255" />
+    <vType id="motorcycle" vClass="motorcycle" length="2.0" maxSpeed="19.44" accel="3.1" decel="4.8" sigma="0.6" color="255,140,0" />
+    <vType id="truck" vClass="truck" length="8.0" maxSpeed="11.11" accel="1.2" decel="4.0" sigma="0.45" color="150,150,150" />
+    <vType id="bus" vClass="bus" length="11.0" maxSpeed="13.89" accel="1.1" decel="4.0" sigma="0.45" color="210,60,60" />
+    <vType id="car_van" vClass="delivery" length="5.4" maxSpeed="15.28" accel="2.0" decel="4.2" sigma="0.5" color="80,80,210" />
+    <vehicle id="few_0" depart="1.41" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10" />
+    </vehicle>
+    <vehicle id="few_1" depart="5.87" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10" />
+    </vehicle>
+    <vehicle id="few_2" depart="12.42" type="car_van">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_3" depart="17.61" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_4" depart="23.94" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_5" depart="29.25" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_6" depart="34.20" type="motorcycle">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_7" depart="40.42" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_8" depart="45.12" type="motorcycle">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_9" depart="51.18" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_10" depart="56.80" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_11" depart="63.09" type="truck">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_12" depart="68.51" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_13" depart="74.90" type="motorcycle">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_14" depart="80.56" type="truck">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_15" depart="85.15" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_16" depart="91.89" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_17" depart="96.97" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_18" depart="103.06" type="car">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_19" depart="107.11" type="motorcycle">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_20" depart="113.24" type="motorcycle">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_21" depart="119.25" type="truck">
+        <route edges="-156084515#1.87 156084437#7 477913073#10 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_22" depart="124.65" type="car">
+        <route edges="-156084515#1.87 156084447#8" />
+    </vehicle>
+    <vehicle id="few_23" depart="130.92" type="motorcycle">
+        <route edges="-156084515#1.87 156084447#8 156084447#9" />
+    </vehicle>
+    <vehicle id="few_24" depart="135.70" type="car">
+        <route edges="-156084515#1.87 156084447#8 156084447#9" />
+    </vehicle>
+    <vehicle id="few_25" depart="141.67" type="car_van">
+        <route edges="-156084515#1.87 156084447#8 156084447#9" />
+    </vehicle>
+    <vehicle id="few_26" depart="146.63" type="motorcycle">
+        <route edges="-156084515#1.87 537517149#1" />
+    </vehicle>
+    <vehicle id="few_27" depart="153.22" type="car">
+        <route edges="-156084515#1.87 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_28" depart="158.90" type="motorcycle">
+        <route edges="-156084515#1.87 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_29" depart="163.96" type="motorcycle">
+        <route edges="-156084515#1.87 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_30" depart="169.48" type="car">
+        <route edges="-156084515#1.87 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_31" depart="176.04" type="car">
+        <route edges="-156084515#1.87 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_32" depart="180.78" type="car">
+        <route edges="-156084515#1.87 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_33" depart="186.58" type="car_van">
+        <route edges="-156084515#1.87 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_34" depart="191.98" type="motorcycle">
+        <route edges="-156084515#1.87 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_35" depart="198.30" type="car">
+        <route edges="1010526553#4.66 1010526553#5" />
+    </vehicle>
+    <vehicle id="few_36" depart="203.01" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5" />
+    </vehicle>
+    <vehicle id="few_37" depart="208.28" type="car">
+        <route edges="1010526553#4.66 1010526553#5 477913073#12" />
+    </vehicle>
+    <vehicle id="few_38" depart="214.97" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_39" depart="220.79" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_40" depart="225.18" type="car">
+        <route edges="1010526553#4.66 1010526553#5 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_41" depart="231.39" type="truck">
+        <route edges="1010526553#4.66 1010526553#5 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_42" depart="237.11" type="car">
+        <route edges="1010526553#4.66 1010526553#5 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_43" depart="243.45" type="car">
+        <route edges="1010526553#4.66 1010526553#5 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_44" depart="248.32" type="car">
+        <route edges="1010526553#4.66 1010526553#5 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_45" depart="254.38" type="car">
+        <route edges="1010526553#4.66 1010526553#5 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_46" depart="258.81" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_47" depart="265.88" type="car">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4" />
+    </vehicle>
+    <vehicle id="few_48" depart="270.74" type="car">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4" />
+    </vehicle>
+    <vehicle id="few_49" depart="276.46" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4" />
+    </vehicle>
+    <vehicle id="few_50" depart="282.77" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4" />
+    </vehicle>
+    <vehicle id="few_51" depart="287.22" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4" />
+    </vehicle>
+    <vehicle id="few_52" depart="292.53" type="car">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6" />
+    </vehicle>
+    <vehicle id="few_53" depart="298.91" type="car">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6" />
+    </vehicle>
+    <vehicle id="few_54" depart="304.36" type="bus">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6" />
+    </vehicle>
+    <vehicle id="few_55" depart="309.85" type="car_van">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084447#8" />
+    </vehicle>
+    <vehicle id="few_56" depart="315.77" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084447#8" />
+    </vehicle>
+    <vehicle id="few_57" depart="320.94" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084447#8" />
+    </vehicle>
+    <vehicle id="few_58" depart="326.72" type="truck">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084447#8 156084447#9" />
+    </vehicle>
+    <vehicle id="few_59" depart="332.10" type="car">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084447#8 156084447#9" />
+    </vehicle>
+    <vehicle id="few_60" depart="337.76" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084447#8 156084447#9" />
+    </vehicle>
+    <vehicle id="few_61" depart="344.71" type="car">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084447#8 156084447#9" />
+    </vehicle>
+    <vehicle id="few_62" depart="348.94" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084447#8 156084447#9" />
+    </vehicle>
+    <vehicle id="few_63" depart="354.58" type="car">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084515#1" />
+    </vehicle>
+    <vehicle id="few_64" depart="361.54" type="bus">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084515#1" />
+    </vehicle>
+    <vehicle id="few_65" depart="367.52" type="car">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084515#1" />
+    </vehicle>
+    <vehicle id="few_66" depart="372.42" type="truck">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084515#1" />
+    </vehicle>
+    <vehicle id="few_67" depart="378.35" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084515#1" />
+    </vehicle>
+    <vehicle id="few_68" depart="384.35" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084515#1" />
+    </vehicle>
+    <vehicle id="few_69" depart="389.45" type="bus">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084515#1" />
+    </vehicle>
+    <vehicle id="few_70" depart="395.06" type="car_van">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084515#1" />
+    </vehicle>
+    <vehicle id="few_71" depart="401.09" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 156084515#1" />
+    </vehicle>
+    <vehicle id="few_72" depart="406.09" type="car">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 537517149#1" />
+    </vehicle>
+    <vehicle id="few_73" depart="412.14" type="car">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_74" depart="416.87" type="bus">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_75" depart="422.82" type="motorcycle">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_76" depart="429.39" type="truck">
+        <route edges="1010526553#4.66 1010526553#5 833772151#4 156084447#6 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_77" depart="433.57" type="car">
+        <route edges="1010526553#5 477913073#12" />
+    </vehicle>
+    <vehicle id="few_78" depart="438.77" type="car">
+        <route edges="1010526553#5 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_79" depart="445.89" type="car_van">
+        <route edges="1010526553#5 477913073#12 477913073#13" />
+    </vehicle>
+    <vehicle id="few_80" depart="451.70" type="car_van">
+        <route edges="1010526553#5 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_81" depart="457.09" type="car">
+        <route edges="1010526553#5 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_82" depart="462.20" type="car">
+        <route edges="1010526553#5 586051832#0 586051832#1" />
+    </vehicle>
+    <vehicle id="few_83" depart="468.36" type="car">
+        <route edges="1010526553#5 833772151#4 156084447#6 537517149#1 537517149#2" />
+    </vehicle>
+    <vehicle id="few_84" depart="472.88" type="car">
+        <route edges="1352445161#8.75 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_85" depart="479.06" type="car_van">
+        <route edges="1352445161#8.75 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_86" depart="484.28" type="motorcycle">
+        <route edges="1352445161#8.75 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_87" depart="489.80" type="motorcycle">
+        <route edges="1352445161#8.75 1010526552#0" />
+    </vehicle>
+    <vehicle id="few_88" depart="496.75" type="motorcycle">
+        <route edges="1352445161#8.75 1010526552#0" />
+    </vehicle>
+</routes>

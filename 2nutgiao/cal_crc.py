@@ -56,7 +56,8 @@ def crc16_binary_simulation(bit_string):
     #print(f"==> MÃ CRC-16 (Hex): {hex(int(final_crc, 2)).upper()}")
     return final_crc
 
-# --- CHẠY THỬ ---
-# Nhập chuỗi nhị phân của bạn ở đây
-input_bits = "00000000 00010011 00000001 00000000 00000001 00000000 00000000 00000000 00000001 00000001 00000001 00010000 00000001 00000001 00000100 00000011 00000011 00000001 00000010" 
-crc16_binary_simulation(input_bits)
+if __name__ == "__main__":
+    # --- CHẠY THỬ ---
+    # Nhập chuỗi nhị phân của bạn ở đây
+    input_bits = "00000000 00010011 00000001 00000000 00000001 00000000 00000000 00000000 00000001 00000001 00000001 00010000 00000001 00000001 00000100 00000011 00000011 00000001 00000010" 
+    crc16_binary_simulation(input_bits)

@@ -68,8 +68,8 @@ def analyze_all_data_kpis(folder_path="."):
     print("="*125 + "\n")
 
     # Xuất file báo cáo tổng hợp mới
-    summary_df.to_csv("all_nga3.csv", index=False)
-    print("[*] Đã lưu báo cáo phân tích tại: crow_nga3.csv")
+    summary_df.to_csv("final_nga3.csv", index=False)
+    print("[*] Đã lưu báo cáo phân tích tại: final_nga3.csv")
 
 if __name__ == "__main__":
     analyze_all_data_kpis()

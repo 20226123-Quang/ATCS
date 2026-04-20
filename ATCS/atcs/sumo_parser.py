@@ -60,6 +60,21 @@ def _resolve_net_file(sumocfg_path: Path) -> Path:
     return net_file_path
 
 
+def _resolve_sumocfg_path(sumocfg_path: Path) -> Path:
+    """Resolve a .sumocfg file from a directory or confirm existence of a file."""
+    if not sumocfg_path.exists():
+        raise FileNotFoundError(f"SUMO config path not found: {sumocfg_path}")
+
+    if sumocfg_path.is_dir():
+        configs = list(sumocfg_path.glob("*.sumocfg"))
+        if not configs:
+            raise FileNotFoundError(f"No .sumocfg found in {sumocfg_path}")
+        # Return the first found config (typically there is only one)
+        return configs[0]
+
+    return sumocfg_path
+
+
 def parse_sumo_network(sumocfg_path: str, yellow_fallback_seconds: int = 3) -> ParsedSUMONetwork:
     """Parse SUMO `.sumocfg` and corresponding `.net.xml` traffic light programs."""
     cfg_path = Path(sumocfg_path).resolve()

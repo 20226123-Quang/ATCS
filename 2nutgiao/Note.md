@@ -1,0 +1,1 @@
+Hiện đang bị lỗi gửi tín hiệu detector lên tủ -> bị lỗi kết quả của các chế độ ad inductive
