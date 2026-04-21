@@ -36,7 +36,7 @@ def main() -> None:
 
     obs, reward, done, info = env.reset()
     print(f"\nEnvironment reset successful.")
-    print(f"Cycle Length (from config): {env.cycle_length_seconds}s")
+    print(f"Initial Dynamic Cycle Length: {env.cycle_length_seconds}s")
 
     step_count = 0
     start_time = time.time()

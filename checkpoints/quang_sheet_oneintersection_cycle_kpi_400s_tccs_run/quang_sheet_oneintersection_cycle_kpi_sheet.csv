@@ -1,0 +1,28 @@
+scenario_family,metric,series,few,normal,crowded
+oneintersection_3direction,queue length,fixed time (Quang),0.0000,0.0390,3.1041
+oneintersection_3direction,queue length,AI,0.0000,0.0000,3.6716
+oneintersection_3direction,queue length,AI vs Fixed time,N/A,100.00%,-18.28%
+oneintersection_3direction,avg wait time,fixed time (Quang),19.38s,21.20s,27.30s
+oneintersection_3direction,avg wait time,AI,33.44s,36.58s,44.87s
+oneintersection_3direction,avg wait time,AI vs Fixed time,-72.53%,-72.56%,-64.36%
+oneintersection_3direction,saturation,fixed time (Quang),0.0638,0.2688,0.5600
+oneintersection_3direction,saturation,AI,0.0603,0.2646,0.5257
+oneintersection_3direction,saturation,AI vs Fixed time,5.48%,1.58%,6.13%
+oneintersection_4direction,queue length,fixed time (Quang),0.0000,2.5152,19.5820
+oneintersection_4direction,queue length,AI,0.0000,2.7280,17.3077
+oneintersection_4direction,queue length,AI vs Fixed time,N/A,-8.46%,11.61%
+oneintersection_4direction,avg wait time,fixed time (Quang),33.08s,40.32s,65.82s
+oneintersection_4direction,avg wait time,AI,46.92s,56.62s,77.67s
+oneintersection_4direction,avg wait time,AI vs Fixed time,-41.81%,-40.43%,-18.01%
+oneintersection_4direction,saturation,fixed time (Quang),0.1299,0.4858,0.9438
+oneintersection_4direction,saturation,AI,0.1323,0.5022,0.7995
+oneintersection_4direction,saturation,AI vs Fixed time,-1.88%,-3.36%,15.29%
+oneintersection_5direction,queue length,fixed time (Quang),0.0000,5.7952,23.4473
+oneintersection_5direction,queue length,AI,0.0000,5.4051,31.9363
+oneintersection_5direction,queue length,AI vs Fixed time,N/A,6.73%,-36.20%
+oneintersection_5direction,avg wait time,fixed time (Quang),54.72s,67.16s,86.76s
+oneintersection_5direction,avg wait time,AI,87.79s,94.58s,100.00s
+oneintersection_5direction,avg wait time,AI vs Fixed time,-60.44%,-40.83%,-15.26%
+oneintersection_5direction,saturation,fixed time (Quang),0.1454,0.5671,1.0409
+oneintersection_5direction,saturation,AI,0.1444,0.5523,1.0113
+oneintersection_5direction,saturation,AI vs Fixed time,0.63%,2.61%,2.84%

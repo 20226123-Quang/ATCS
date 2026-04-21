@@ -26,6 +26,10 @@ _cfg = load_model_config()
 _EPS = 1e-8
 
 
+def _should_log_lane_width_factor(scenario_name):
+    return scenario_name == "oneintersection_4direction"
+
+
 def initialize_acac(obs_dim, action_dim, min_action, max_action, tls_names, device="cpu"):
     num_agents = len(tls_names)
     time_encoder = SinusoidalPositionalEncoding(_cfg.model.time_embed_dim).to(device)
@@ -757,7 +761,13 @@ def main():
         trainer.critic.eval()
 
         print("Running ACAC Evaluation...")
-        env = TrafficEnvironment(sumocfg_path=sumocfg_path, use_gui=False)
+        env = TrafficEnvironment(
+            sumocfg_path=sumocfg_path,
+            use_gui=False,
+            log_lane_width_adjustment_factor=_should_log_lane_width_factor(
+                scenario_name
+            ),
+        )
         acac_stats = run_acac_episode(env, trainer, args.steps, sat_clip_max=args.sat_clip_max)
         env.close()
         acac_data = _summarize_episode(acac_stats, scenario_name, "rl")

@@ -84,7 +84,7 @@
         "directional",
         "density"
       ],
-      "enabled": false
+      "enabled": true
     },
     {
       "name": "few_4direction",
@@ -97,7 +97,7 @@
         "directional",
         "density"
       ],
-      "enabled": false
+      "enabled": true
     },
     {
       "name": "few_5direction",
@@ -110,7 +110,7 @@
         "directional",
         "density"
       ],
-      "enabled": false
+      "enabled": true
     },
     {
       "name": "normal_3direction",
@@ -123,7 +123,7 @@
         "directional",
         "density"
       ],
-      "enabled": false
+      "enabled": true
     },
     {
       "name": "normal_4direction",
@@ -136,7 +136,7 @@
         "directional",
         "density"
       ],
-      "enabled": false
+      "enabled": true
     },
     {
       "name": "normal_5direction",
@@ -149,7 +149,7 @@
         "directional",
         "density"
       ],
-      "enabled": false
+      "enabled": true
     },
     {
       "name": "crowded_3direction",
@@ -162,7 +162,7 @@
         "directional",
         "density"
       ],
-      "enabled": false
+      "enabled": true
     },
     {
       "name": "crowded_4direction",
@@ -175,7 +175,7 @@
         "directional",
         "density"
       ],
-      "enabled": false
+      "enabled": true
     },
     {
       "name": "crowded_5direction",
@@ -188,7 +188,7 @@
         "directional",
         "density"
       ],
-      "enabled": false
+      "enabled": true
     }
   ]
 }

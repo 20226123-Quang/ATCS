@@ -125,6 +125,10 @@ def initialize_log_file(log_file: Path) -> None:
         )
 
 
+def _should_log_lane_width_factor(scenario_name: str) -> bool:
+    return scenario_name == "oneintersection_4direction"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     default_cfg = str(
@@ -182,39 +186,11 @@ def main() -> None:
 
     print(f"[{scenario_name}] Output directory: {checkpoint_dir}")
 
-    if args.resume and not args.checkpoint and model_file.exists():
-        args.checkpoint = str(model_file)
-        print(f"[{scenario_name}] Resume mode: using existing checkpoint {model_file}")
-
-    if args.resume:
-        if not args.checkpoint:
-            raise ValueError(
-                "--resume requires --checkpoint or an existing scenario checkpoint file."
-            )
-        episode_rewards, start_episode = load_existing_training_history(log_file)
-        if not log_file.exists():
-            initialize_log_file(log_file)
-        print(
-            f"[{scenario_name}] Resuming from episode {start_episode}. "
-            f"Target total episodes: {args.episodes}."
-        )
-        if episode_rewards:
-            print(
-                f"[{scenario_name}] Loaded {len(episode_rewards)} reward points from existing log."
-            )
-    else:
-        initialize_log_file(log_file)
-        episode_rewards = []
-        start_episode = 0
-
-    if start_episode >= args.episodes:
-        print(
-            f"[{scenario_name}] Existing log already reached episode {start_episode}, "
-            f"which is >= target {args.episodes}. Nothing to do."
-        )
-        return
-
-    env = TrafficEnvironment(sumocfg_path=args.sumocfg, use_gui=args.gui)
+    env = TrafficEnvironment(
+        sumocfg_path=args.sumocfg,
+        use_gui=args.gui,
+        log_lane_width_adjustment_factor=_should_log_lane_width_factor(scenario_name),
+    )
 
     obs, reward, done, info = env.reset()
     obs_dim = obs.shape[1] * obs.shape[2]

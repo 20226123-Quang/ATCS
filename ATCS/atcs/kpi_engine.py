@@ -39,6 +39,8 @@ class LaneKPI:
     capacity_pcu_per_hour: float
     inflow_pcu_per_hour: float
     average_queue_vehicle: float
+    total_demand_pcu_per_hour: float
+    residual_n_ge_vehicles: float
 
 
 class KPIEngine:
@@ -120,15 +122,25 @@ class KPIEngine:
         stats.time_since_last_service_seconds = 0.0
         self._reset_phase_window(stats)
 
-    def start_new_cycle(self, lane_id: str) -> None:
+    def reset_cycle(self, lane_id: str, last_n_ge: Optional[float] = None) -> None:
         stats = self.get_lane_stats(lane_id)
+        if last_n_ge is None:
+            last_n_ge = stats.residual_queue_vehicles
+        stats.residual_queue_vehicles = max(float(last_n_ge), 0.0)
         stats.queue_integral = 0.0
         stats.cycle_steps = 0
         stats.cycle_inflow_pcu = 0.0
         stats.cycle_outflow_pcu = 0.0
         stats.green_seconds = 0.0
-        stats.initial_cycle_queue = stats.queue_count
+        stats.initial_cycle_queue = max(
+            float(stats.queue_count),
+            float(stats.residual_queue_vehicles),
+            0.0,
+        )
         self._reset_phase_window(stats)
+
+    def start_new_cycle(self, lane_id: str) -> None:
+        self.reset_cycle(lane_id)
 
     def start_new_phase(self, lane_id: str) -> None:
         stats = self.get_lane_stats(lane_id)
@@ -160,7 +172,6 @@ class KPIEngine:
         )
         split_failure_rate = min(max(residual_queue / served_demand, 0.0), 1.0)
 
-        stats.residual_queue_vehicles = residual_queue
         stats.last_green_demand_pcu = served_demand
         stats.split_failure_rate = split_failure_rate
         stats.pending_split_failure_rate = split_failure_rate
@@ -230,6 +241,9 @@ class KPIEngine:
         # TCCS 24:2018 is a macroscopic formula that expects stable q.
         effective_period = max(float(cycle_steps), cycle_length)
         inflow_pcu_per_hour = stats.cycle_inflow_pcu * 3600.0 / effective_period
+        total_demand_pcu_per_hour = inflow_pcu_per_hour + (
+            max(float(stats.residual_queue_vehicles), 0.0) * 3600.0 / cycle_length
+        )
 
         # Use the actual granted green time. A tiny numerical floor keeps the capacity
         # finite without masking the effect of the agent's green extension decision.
@@ -254,13 +268,13 @@ class KPIEngine:
         t_h = max(f_hv * f1 * f2 * t_h0, eps)
         S = 3600.0 / t_h
         capacity = S * g_over_c
-        v_over_c = inflow_pcu_per_hour / max(capacity, eps)
+        v_over_c = total_demand_pcu_per_hour / max(capacity, eps)
 
         # -------------------------------------------------------------
         # 1. Chiều dài hàng chờ (N_GE) theo HBS 2001 (TCCS 24:2018 F-21)
         # -------------------------------------------------------------
         m_max = float(g_effective * S / 3600.0)
-        m_tb = float(inflow_pcu_per_hour * cycle_length / 3600.0)
+        m_tb = float(total_demand_pcu_per_hour * cycle_length / 3600.0)
         g_val = float(v_over_c)
 
         if g_val <= 0.65:
@@ -287,7 +301,7 @@ class KPIEngine:
         # 2. Thời gian trễ (Average Control Delay t_w) theo HBS 2001 (TCCS 24:2018)
         # -------------------------------------------------------------
         q_over_S = min(
-            inflow_pcu_per_hour / S, 0.999
+            total_demand_pcu_per_hour / S, 0.999
         )  # limit to avoid div by zero in t_w1
 
         # t_w1: Thời gian trễ cơ bản
@@ -308,4 +322,6 @@ class KPIEngine:
             capacity_pcu_per_hour=float(capacity),
             inflow_pcu_per_hour=float(inflow_pcu_per_hour),
             average_queue_vehicle=float(n_ge_vehicles),
+            total_demand_pcu_per_hour=float(total_demand_pcu_per_hour),
+            residual_n_ge_vehicles=float(n_ge_vehicles),
         )

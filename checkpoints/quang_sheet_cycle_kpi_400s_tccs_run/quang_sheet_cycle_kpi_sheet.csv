@@ -1,0 +1,10 @@
+scenario_family,metric,series,few,normal,crowded
+2intersection,queue length,fixed time (Quang),0.0000,0.0000,0.0000
+2intersection,queue length,AI,0.0000,0.0000,0.1198
+2intersection,queue length,AI vs Fixed time,N/A,N/A,N/A
+2intersection,avg wait time,fixed time (Quang),8.94s,9.54s,10.37s
+2intersection,avg wait time,AI,12.59s,12.79s,12.94s
+2intersection,avg wait time,AI vs Fixed time,-40.84%,-34.10%,-24.75%
+2intersection,saturation,fixed time (Quang),0.0296,0.1558,0.2987
+2intersection,saturation,AI,0.0268,0.1430,0.2845
+2intersection,saturation,AI vs Fixed time,9.54%,8.22%,4.76%
